@@ -6,21 +6,21 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 12:31:34 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/03 13:09:46 by scambier         ###   ########.fr       */
+/*   Updated: 2024/05/03 13:20:44 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef STRUCTS_H
 # define STRUCTS_H
 
-# define MAP_EMPTY	32
-# define MAP_WALL	49
-# define MAP_FLOOR	48
+# define MAP_EMPTY	0
+# define MAP_WALL	1
+# define MAP_FLOOR	2
 
-# define TEXTURE_NORTH	0
-# define TEXTURE_EAST	1
-# define TEXTURE_SOUTH	2
-# define TEXTURE_WEST	3
+# define EAST	0
+# define NORTH	1
+# define WEST	2
+# define SOUTH	3
 
 typedef struct s_vec2f {
 	float	x;
@@ -32,14 +32,19 @@ typedef struct s_object {
 	float	rotation;
 }	t_object;
 
+typedef unsigned short	t_tile;
+
 typedef struct s_map {
-	char		**content;
+	t_tile		**content;
 	int			width;
 	int			height;
 	t_texture	wall_textures[4];
 	t_color		floor_color;
 	t_color		ceiling_color;
 }	t_map;
+
+t_tile	map_get_at(t_map *map, int x, int y);
+void	map_set_at(t_map *map, int x, int y, t_tile v);
 
 typedef struct s_world {
 	t_map		map;
