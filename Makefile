@@ -6,7 +6,7 @@
 #    By: ymostows <ymostows@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/05/03 14:57:20 by ymostows          #+#    #+#              #
-#    Updated: 2024/05/03 15:41:48 by ymostows         ###   ########.fr        #
+#    Updated: 2024/05/06 16:40:28 by ymostows         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,7 +14,7 @@ NAME		=	cube3d
 
 CC			=	clang
 
-FLAG		=	-Wall -Wextra -Werror -g3
+FLAG		=	-Wall -Werror -Wextra -g3
 
 LIBFT_PATH	=	./libft/
 
@@ -24,7 +24,7 @@ MLX_FILE	=	libmlx.a
 
 LIBFT_LIB	=	$(addprefix $(LIBFT_PATH), $(LIBFT_FILE))
 
-MLX_FLAG	=	-lX11 -lXext
+MLX_FLAG	=	-lX11 -lXext -lm
 
 MLX_PATH	=	./minilibx-linux/
 
