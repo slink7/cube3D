@@ -6,7 +6,7 @@
 /*   By: ymostows <ymostows@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:42:56 by ymostows          #+#    #+#             */
-/*   Updated: 2024/05/07 17:34:12 by ymostows         ###   ########.fr       */
+/*   Updated: 2024/05/07 19:14:33 by ymostows         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,7 +90,7 @@ void draw_3d_walls(t_world *world, int px, int py)
     r = 512 - 1;
     while (++r < 1024)
     {
-        ray_angle = world->player.z + ((r - 512) * 0.001);
+        ray_angle = world->player.z - (PI / 12) + ((r - 512) * 0.0015);
         
         xo = px;
         yo = py;
@@ -109,6 +109,7 @@ void draw_3d_walls(t_world *world, int px, int py)
                 hit_wall = 1;
                 distance = sqrt((rx - px) * (rx - px) + (ry - py) * (ry - py));
                 int wall_height = (int)(512.0f / distance * 70);
+                wall_height = (int)((float)wall_height / cos(ray_angle - world->player.z));
                 int wall_top = 256 - wall_height / 2;
                 int wall_bottom = 256 + wall_height / 2;
                 if (r  == 512)
@@ -121,7 +122,7 @@ void draw_3d_walls(t_world *world, int px, int py)
                     put_line(&world->backbuffer, (t_vec2i){r, wall_top}, (t_vec2i){r, wall_bottom}, 0x00AA00);
                 else
                     put_line(&world->backbuffer, (t_vec2i){r, wall_top}, (t_vec2i){r, wall_bottom}, 0x00A000); // Dessiner le mur décalé
-                put_line(&world->backbuffer, (t_vec2i){r, wall_top}, (t_vec2i){r, 0}, 0xAABCFF);
+                put_line(&world->backbuffer, (t_vec2i){r, wall_top}, (t_vec2i){r, 0}, 0x03A9FC);
                 put_line(&world->backbuffer, (t_vec2i){r, wall_bottom}, (t_vec2i){r, 512}, 0xAAFFAA);
 
             }
@@ -149,7 +150,7 @@ void draw_rays(t_world *world, int px, int py)
     int hit_wall;
     int r;
 
-    ray_angle = world->player.z;
+    ray_angle = world->player.z - (PI / 12);
 
     r = 0 - 1;
     while (++r < 512)
@@ -178,7 +179,7 @@ void draw_rays(t_world *world, int px, int py)
                 yo = ry;
             }
         }
-        ray_angle += 0.001;
+        ray_angle += 0.0015;
     }
 }
 
