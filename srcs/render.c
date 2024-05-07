@@ -6,7 +6,7 @@
 /*   By: ymostows <ymostows@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:42:56 by ymostows          #+#    #+#             */
-/*   Updated: 2024/05/07 17:10:24 by ymostows         ###   ########.fr       */
+/*   Updated: 2024/05/07 17:34:12 by ymostows         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -117,10 +117,13 @@ void draw_3d_walls(t_world *world, int px, int py)
                     wall_top = 1;
                 if (wall_bottom > 512)
                     wall_bottom = 512;
-                if ((int)rx % 73 == 0 && (int)ry % 73 == 0)
-                    put_line(&world->backbuffer, (t_vec2i){r, wall_top}, (t_vec2i){r, wall_bottom}, 0xFFFFFF);
+                if ((int)rx % 73 == 0)
+                    put_line(&world->backbuffer, (t_vec2i){r, wall_top}, (t_vec2i){r, wall_bottom}, 0x00AA00);
                 else
-                    put_line(&world->backbuffer, (t_vec2i){r, wall_top}, (t_vec2i){r, wall_bottom}, 0xFF0000); // Dessiner le mur décalé
+                    put_line(&world->backbuffer, (t_vec2i){r, wall_top}, (t_vec2i){r, wall_bottom}, 0x00A000); // Dessiner le mur décalé
+                put_line(&world->backbuffer, (t_vec2i){r, wall_top}, (t_vec2i){r, 0}, 0xAABCFF);
+                put_line(&world->backbuffer, (t_vec2i){r, wall_bottom}, (t_vec2i){r, 512}, 0xAAFFAA);
+
             }
             else
             {
@@ -179,11 +182,6 @@ void draw_rays(t_world *world, int px, int py)
     }
 }
 
-
-
-
-
-
 int move_player2(int keysym, t_world *world)
 {
     if (keysym == KEY_UP)
@@ -200,12 +198,12 @@ int move_player2(int keysym, t_world *world)
     }
     if (keysym == XK_Left)
     {
-        world->player.z +=0.1f;
+        world->player.z -=0.1f;
         return (1);
     }
     if (keysym == XK_Right)
     {
-        world->player.z -=0.1f;
+        world->player.z +=0.1f;
         return (1);
     }
     return (0);
