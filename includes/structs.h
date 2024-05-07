@@ -6,20 +6,23 @@
 /*   By: ymostows <ymostows@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 12:31:34 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/06 17:38:31 by ymostows         ###   ########.fr       */
+/*   Updated: 2024/05/07 14:42:46 by ymostows         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef STRUCTS_H
 # define STRUCTS_H
 
+# define PI 3.1415926535
+
 # define GREY	0x808080
 # define WHITE	0xFFFFFF
+# define TILE_SIZE 73
 
-# define KEY_UP  			119
-# define KEY_LEFT  			97
-# define KEY_RIGHT 			100
-# define KEY_DOWN  			115
+# define KEY_UP  			'z'
+# define KEY_LEFT  			'q'
+# define KEY_RIGHT 			'd'
+# define KEY_DOWN  			's'
 
 # define MAP_EMPTY	0
 # define MAP_WALL	1
@@ -32,15 +35,15 @@
 
 typedef unsigned int	t_color;
 
-typedef struct s_vec2f {
-	float	x;
-	float	y;
-}	t_vec2f;
+typedef struct s_vec2i {
+	int	x;
+	int	y;
+}	t_vec2i;
 
 typedef struct s_object {
 	float	x;
 	float	y;
-	float	rotation;
+	float	z;
 }	t_object;
 
 typedef unsigned short	t_tile;
@@ -50,6 +53,8 @@ typedef struct s_image {
 	char	*data;
 	int		bits_per_pixel;
 	int		line_length;
+	int		width;
+	int		height;
 	int		endian;
 }				t_image;
 
@@ -70,7 +75,7 @@ typedef struct s_world {
 	void		*win_ptr;
 	t_map		map;
 	t_object	player;
-	//t_image		minimap;
+	t_image		minimap;
 	t_image		backbuffer;
 }	t_world;
 
