@@ -3,8 +3,8 @@ NO ./img/north.png
 WE ./img/west.png
 SO ./img/south.png
 
-F 220,100,0
-C 225,30,0
+F ABCDEF
+C FF0000
 
 
 

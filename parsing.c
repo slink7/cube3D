@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:43:09 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/08 21:47:45 by scambier         ###   ########.fr       */
+/*   Updated: 2024/05/08 21:59:31 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,10 @@ void	parse_infos(char **lines, int *k, t_map *map)
 			continue ;
 		if (!ft_strchrf(lines[*k], map_predicat, 1))
 			return ;
+		if (lines[*k][0] == 'F')
+			map->floor_color = ft_atoi_base(lines[*k] + 2, "0123456789ABCDEF");
+		if (lines[*k][0] == 'C')
+			map->ceiling_color = ft_atoi_base(lines[*k] + 2, "0123456789ABCDEF");
 	}
 }
 
