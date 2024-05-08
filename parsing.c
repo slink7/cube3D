@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:43:09 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/08 21:31:48 by scambier         ###   ########.fr       */
+/*   Updated: 2024/05/08 21:47:45 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,20 +38,41 @@ void	parse_infos(char **lines, int *k, t_map *map)
 	}
 }
 
+int	get_longest(char **lines)
+{
+	int	k;
+	int	max;
+	int	temp;
+
+	max = -0x80000000;
+	k = -1;
+	while (lines[++k])
+	{
+		temp = ft_strlen(lines[k]);
+		if (temp > max)
+			max = temp;
+	}
+	return (max);
+}
+
 void	parse_map(char **lines, int *k, t_map *map)
 {
 	char	*pred;
 	int		l;
 
-	map->content = ft_calloc(ft_strarrlen(lines), sizeof(char *));
-	ft_printf("%d\n", ft_strarrlen(lines + *k));
+	map->height = ft_strarrlen(lines + *k);
+	map->content = ft_calloc(map->height, sizeof(char *));
+	if (!map->content)
+		return ;
+	map->width = get_longest(lines + *k);
 	l = 0;
 	while (lines[++*k])
 	{
 		pred = ft_strchrf(lines[*k], map_predicat, 1);
 		if (pred)
 			ft_printf("Error: '%c' is an invalid map char\n", *pred);
-		map->content[l++] = (t_tile *)ft_strdup(lines[*k]);
+		map->content[l] = ft_calloc(map->width + 1, sizeof(t_tile));
+		ft_memcpy(map->content[l++], lines[*k], map->width);
 	}
 }
 
