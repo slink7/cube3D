@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 12:31:34 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/03 14:58:35 by scambier         ###   ########.fr       */
+/*   Updated: 2024/05/09 00:26:37 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,23 +34,25 @@ typedef struct s_object {
 
 typedef unsigned short	t_tile;
 
-typedef struct s_texture {
+typedef struct s_image {
 	void	*content;
 	char	*addr;
 	int		bits_per_pixel;
 	int		line_length;
 	int		endian;
-}				t_texture;
+	int		width;
+	int		height;
+}				t_image;
 
 typedef unsigned int	t_color;
 
 typedef struct s_map {
-	t_tile		**content;
-	int			width;
-	int			height;
-	t_texture	wall_textures[4];
-	t_color		floor_color;
-	t_color		ceiling_color;
+	t_tile	**content;
+	int		width;
+	int		height;
+	t_image	wall_textures[4];
+	t_color	floor_color;
+	t_color	ceiling_color;
 }	t_map;
 
 t_tile	map_get_at(t_map *map, int x, int y);

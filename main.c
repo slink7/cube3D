@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:34:12 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/08 21:59:54 by scambier         ###   ########.fr       */
+/*   Updated: 2024/05/09 01:19:52 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,10 +31,11 @@ void	print_map(t_map *map)
 
 int	main(int argc, char **argv)
 {
-	t_map	map;
+	// t_map	map;
 
-	ft_memset(&map, 0, sizeof(t_map));
-	load_map("map.cub", &map);
-	print_map(&map);
+	// ft_memset(&map, 0, sizeof(t_map));
+	// load_map("map.cub", &map);
+	// print_map(&map);
+	t_image *img = load_png("decoy.png");
 	return (0);
 }
