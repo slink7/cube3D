@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/08 22:19:20 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/09 01:22:26 by scambier         ###   ########.fr       */
+/*   Updated: 2024/05/09 01:32:14 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,7 @@ int	maj_crc(unsigned int crc, unsigned short *bloc, unsigned int size)
 
 int	bytes_to_int(char *bytes)
 {
-	return ((bytes[0] << 3) + (bytes[1] << 2) + (bytes[2] << 1) + (bytes[3] << 0));
+	return ((bytes[0] << 24) + (bytes[1] << 16) + (bytes[2] << 8) + (bytes[3] << 0));
 }
 
 int	read_int(int fd)
@@ -65,7 +65,7 @@ int	read_int(int fd)
 	char	buffer[4];
 
 	read(fd, buffer, 4);
-	return ((buffer[0] << 3) + (buffer[1] << 2) + (buffer[2] << 1) + (buffer[3] << 0));
+	return (bytes_to_int(buffer));
 }
 
 void	read_chunk(int fd)
@@ -84,8 +84,8 @@ void	read_chunk(int fd)
 	ft_printf("%d bytes\n", length);
 	crc0 = read_int(fd);
 	crc1 = validation_crc(maj_crc(0xFFFFFFFF, (unsigned short *)data, length));
-	ft_printf("Read crc: %x\n", crc0);
-	ft_printf("Computed crc: %u\n", crc1);
+	ft_printf("Read crc: 0x%x\n", crc0);
+	ft_printf("Computed crc: 0x%x\n", crc1);
 }
 
 t_image *load_png(char *path)
