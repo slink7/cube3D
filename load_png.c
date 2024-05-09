@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/08 22:19:20 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/09 01:32:14 by scambier         ###   ########.fr       */
+/*   Updated: 2024/05/09 15:43:30 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,11 +15,6 @@
 
 #include "libft.h"
 #include "structs.h"
-
-int	validation_crc(unsigned int crc)
-{
-	return (crc ^ 0xFFFFFFFF);
-}
 
 unsigned int	table_crc(unsigned int i)
 {
@@ -38,7 +33,7 @@ unsigned int	table_crc(unsigned int i)
 	return (c);
 }
 
-int	maj_crc(unsigned int crc, unsigned short *bloc, unsigned int size)
+int	calcul_crc(unsigned int crc, unsigned char *bloc, unsigned int size)
 {
 	unsigned int c, n, v;
 	c = crc;
@@ -52,7 +47,7 @@ int	maj_crc(unsigned int crc, unsigned short *bloc, unsigned int size)
 		c = v ^ (c / 256);
 		n++;
 	}
-	return (c);
+	return (c ^ 0xFFFFFFFF);
 }
 
 int	bytes_to_int(char *bytes)
@@ -68,23 +63,40 @@ int	read_int(int fd)
 	return (bytes_to_int(buffer));
 }
 
+char	*read_malloc(int fd, int length)
+{
+	char	*out;
+
+	out = ft_calloc(length + 1, sizeof(char));
+	read(fd, out, length);
+	return (out);
+}
+
 void	read_chunk(int fd)
 {
-	int		length;
-	char	name[4];
+	char	*length;
+	int		length_value;
+	char	*type;
 	char	*data;
-	int		crc0;
+	int		crc_value;
+	char	*concat;
+
 	int		crc1;
 
-	length = read_int(fd);
-	read(fd, name, 4);
-	data = ft_calloc(length + 1, sizeof(char));
-	read(fd, data, length);
-	ft_pmem(data, length);
-	ft_printf("%d bytes\n", length);
-	crc0 = read_int(fd);
-	crc1 = validation_crc(maj_crc(0xFFFFFFFF, (unsigned short *)data, length));
-	ft_printf("Read crc: 0x%x\n", crc0);
+	length = read_malloc(fd, 4);
+	length_value = bytes_to_int(length);
+	
+	type = read_malloc(fd, 4);
+
+	data = read_malloc(fd, length_value);
+	ft_pmem(data, length_value);
+
+	crc_value = read_int(fd);
+
+	char *a[4] = {(char *)type, (char *)data, (char *)length, 0};
+	concat = ft_strsjoin((char **)a, "");
+	crc1 = calcul_crc(0xFFFFFFFF, (unsigned char *)concat, ft_strlen(concat));
+	ft_printf("Read crc: 0x%x\n", crc_value);
 	ft_printf("Computed crc: 0x%x\n", crc1);
 }
 
@@ -107,6 +119,8 @@ t_image *load_png(char *path)
 	}
 	// read(fd, buffer, 25);
 	// ft_pmem(buffer, 25);
+	// int crc1 = validation_crc(maj_crc(0xFFFFFFFF, (unsigned short *)buffer, 21));
+	// ft_printf("calc : %x\n", crc1);
 	read_chunk(fd);
 	
 	// read(fd, buffer, 4);
