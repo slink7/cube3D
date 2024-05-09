@@ -6,7 +6,7 @@
 /*   By: ymostows <ymostows@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:42:56 by ymostows          #+#    #+#             */
-/*   Updated: 2024/05/07 19:14:33 by ymostows         ###   ########.fr       */
+/*   Updated: 2024/05/09 14:59:25 by ymostows         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,23 +102,23 @@ void draw_3d_walls(t_world *world, int px, int py)
         {
             rx = xo + xstep;
             ry = yo + ystep;
-            mx = (int)rx / TILE_SIZE;
-            my = (int)ry / TILE_SIZE;
+            mx = (int)rx / world->res.tile_size;
+            my = (int)ry / world->res.tile_size;
             if (mx >= 0 && mx < world->map.width && my >= 0 && my < world->map.height && world->map.content[my][mx] == MAP_WALL)
             {
                 hit_wall = 1;
                 distance = sqrt((rx - px) * (rx - px) + (ry - py) * (ry - py));
-                int wall_height = (int)(512.0f / distance * 70);
+                int wall_height = (int)(512.0f / distance * world->res.tile_size);
                 wall_height = (int)((float)wall_height / cos(ray_angle - world->player.z));
                 int wall_top = 256 - wall_height / 2;
                 int wall_bottom = 256 + wall_height / 2;
-                if (r  == 512)
-                    printf("wt:%d wb:%d\n", wall_top, wall_bottom);
+                /*if (r  == 512)
+                    printf("wt:%d wb:%d\n", wall_top, wall_bottom);*/
                 if (wall_top < 0)
-                    wall_top = 1;
+                    wall_top = 0;
                 if (wall_bottom > 512)
                     wall_bottom = 512;
-                if ((int)rx % 73 == 0)
+                if ((int)rx % world->res.tile_size == 0)
                     put_line(&world->backbuffer, (t_vec2i){r, wall_top}, (t_vec2i){r, wall_bottom}, 0x00AA00);
                 else
                     put_line(&world->backbuffer, (t_vec2i){r, wall_top}, (t_vec2i){r, wall_bottom}, 0x00A000); // Dessiner le mur décalé
@@ -134,11 +134,6 @@ void draw_3d_walls(t_world *world, int px, int py)
         }
     }
 }
-
-
-
-
-
 
 void draw_rays(t_world *world, int px, int py)
 {
@@ -164,13 +159,13 @@ void draw_rays(t_world *world, int px, int py)
         {
             rx = xo + xstep;
             ry = yo + ystep;
-            mx = (int)rx / TILE_SIZE;
-            my = (int)ry / TILE_SIZE;
+            mx = (int)rx / world->res.tile_size;
+            my = (int)ry / world->res.tile_size;
 
             if (mx >= 0 && mx < world->map.width && my >= 0 && my < world->map.height && world->map.content[my][mx] == MAP_WALL)
             {
                 hit_wall = 1;
-                //printf("rx:%f ry:%f mx:%d my:%d\n", rx, ry, mx * TILE_SIZE, my * TILE_SIZE);
+                //printf("rx:%f ry:%f mx:%d my:%d\n", rx, ry, mx * world.res.tile_size, my * world.res.tile_size);
                 put_line(&world->backbuffer, (t_vec2i){px, py}, (t_vec2i){(int)rx, (int)ry}, 0xFF0000);
             }
             else
@@ -264,8 +259,8 @@ int init_minimap(t_world *world)
     int width;
     int color;
 
-    height = 512 / world->map.height;
-    width = 512 / world->map.width;
+    height = world->res.height / world->map.height;
+    width = (world->res.width / 2) / world->map.width;
     init_img(world, &world->minimap, 1024, 512);
     j = -1;
     while (++j < world->map.height)
@@ -346,29 +341,37 @@ int main()
         mlx_new_window(world.mlx_ptr, 1024, 512, "cube3d"),
         {
             {
-                { 0, 0, 0, 0, 1, 1, 1 },
-                { 0, 1, 1, 1, 1, 2, 1 },
-                { 1, 1, 2, 2, 2, 2, 1 },
-                { 1, 2, 2, 1, 2, 2, 1 },
-                { 1, 2, 2, 2, 2, 1, 1 },
-                { 1, 2, 2, 2, 1, 1, 0 },
-                { 1, 1, 1, 1, 1, 0, 0 },
+                { 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
+                { 0, 1, 1, 1, 1, 2, 1, 2, 2, 2, 2, 1 },
+                { 1, 1, 2, 2, 2, 2, 1, 2, 1, 2, 2, 1 },
+                { 1, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 1 },
+                { 1, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 1 },
+                { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 1 },
+                { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 1 },
+                { 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
+                { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 1 },
+                { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 1 },
+                { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 1 },
+                { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
             },
-            7,
-            7,
+            12,
+            12,
             {0,0,0,0,0,0,0},
             0xFF000000,
             0x00FFFF00
         },
         {
-            2.0f,
-            2.0f,
+            4.0f,
+            5.0f,
             0.0f
         },
         {0},
-        {0}
+        {0},
+        {1024, 512, 0}
     };
-    init_img(&world, &world.backbuffer, 1024, 512);
+    world.res.tile_size = (world.res.width / 2) / world.map.width;
+    init_img(&world, &world.backbuffer, world.res.width, world.res.height);
+    printf("tile_size:%d\n", world.res.tile_size);
     /*mlx_hook(world.win_ptr, KeyPress, KeyPressMask,
 			&ft_move_player, s_game);*/
 	mlx_hook(world.win_ptr, DestroyNotify, \

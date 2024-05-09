@@ -6,7 +6,7 @@
 /*   By: ymostows <ymostows@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 12:31:34 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/07 14:42:46 by ymostows         ###   ########.fr       */
+/*   Updated: 2024/05/09 14:59:30 by ymostows         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,13 +59,21 @@ typedef struct s_image {
 }				t_image;
 
 typedef struct s_map {
-	int			content[7][7];
+	int			content[12][12];
 	int			width;
 	int			height;
 	t_image		wall_textures;
 	t_color		floor_color;
 	t_color		ceiling_color;
 }	t_map;
+
+typedef struct s_res
+{
+	int	width;
+	int	height;
+	int	tile_size;
+}	t_res;
+
 
 t_tile	map_get_at(t_map *map, int x, int y);
 void	map_set_at(t_map *map, int x, int y, t_tile v);
@@ -77,6 +85,7 @@ typedef struct s_world {
 	t_object	player;
 	t_image		minimap;
 	t_image		backbuffer;
+	t_res		res;
 }	t_world;
 
 #endif
