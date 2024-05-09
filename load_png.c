@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/08 22:19:20 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/09 16:34:18 by scambier         ###   ########.fr       */
+/*   Updated: 2024/05/09 17:00:47 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,61 +16,30 @@
 #include "libft.h"
 #include "structs.h"
 
-unsigned int	table_crc(unsigned int i)
+unsigned int	crc32(unsigned char *bloc, unsigned int size)
 {
-	unsigned int	c, j;
+	int				k;
+	int				l;
+	unsigned int	crc;
+	char			ch;
+	unsigned int	b;
 
-	c = i;
-	j = 0;
-	while (j < 8)
+	crc = 0xFFFFFFFF;
+	k = -1;
+	while ((unsigned int)++k < size)
 	{
-		if (c & 1)
-			c = 0xEDB88320 ^ (c / 2);
-		else
-			c = c / 2;
-		j++;
-	}
-	return (c);
-}
-
-int	calcul_crc(unsigned int crc, unsigned char *bloc, unsigned int size)
-{
-  // Initialisation
-	unsigned int c, n, v;
-	c = crc;
-
-  // Boucle de traitement des octets
-	n = 0;
-	while (n < size)
-	{
-		// Calcul du XOR avec l'octet courant
-		v = c ^ bloc[n];
-		v = v & 0xff;  // Masque pour isoler le byte de poids faible
-
-		// Recherche dans la table CRC
-		v = table_crc(v);
-
-		// Mise à jour du CRC
-		c = v ^ (c / 256);
-		n++;
-	}
-	return (c ^ 0xFFFFFFFF);
-}
-
-unsigned int crc32(const char *s, size_t n) {
-	unsigned int crc=0xFFFFFFFF;
-	
-	for(size_t i=0;i<n;i++) {
-		char ch=s[i];
-		for(size_t j=0;j<8;j++) {
-			unsigned int b=(ch^crc)&1;
-			crc>>=1;
-			if(b) crc=crc^0xEDB88320;
-			ch>>=1;
+		ch = bloc[k];
+		l = -1;
+		while ((unsigned int)++l < 8)
+		{
+			b = (ch ^ crc) & 1;
+			crc >>= 1;
+			if (b)
+				crc = crc ^ 0xEDB88320;
+			ch >>= 1;
 		}
 	}
-	
-	return ~crc;
+	return (~crc);
 }
 
 int	bytes_to_int(char *bytes)
@@ -118,7 +87,8 @@ void	read_chunk(int fd)
 
 	char *a[4] = {(char *)type, (char *)data, (char *)length, 0};
 	concat = ft_strsjoin((char **)a, "");
-	crc1 = calcul_crc(0xFFFFFFFF, (unsigned char *)concat, ft_strlen(concat));
+	ft_pmem(concat, ft_strlen(concat));
+	crc1 = crc32((unsigned char *)concat, ft_strlen(concat));
 	ft_printf("Read crc: 0x%x\n", crc_value);
 	ft_printf("Computed crc: 0x%x\n", crc1);
 }
@@ -142,11 +112,14 @@ t_image *load_png(char *path)
 	}
 	// read(fd, buffer, 25);
 	// ft_pmem(buffer, 25);
+	
 	// int crc1 = validation_crc(maj_crc(0xFFFFFFFF, (unsigned short *)buffer, 21));
 	// ft_printf("calc : %x\n", crc1);
-	char *str = "a";
-	ft_printf("crc32 de [%s] : 0x%x\n", str, calcul_crc(0xFFFFFFFF, str, 1));
-	//read_chunk(fd);
+	
+	// char *str = "abc";
+	// ft_printf("crc32 de [%s] : 0x%x\n", str, crc32(str, ft_strlen(str)));
+	
+	read_chunk(fd);
 	
 	// read(fd, buffer, 4);
 	// ft_pmem(buffer, 4);
