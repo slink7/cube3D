@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/08 22:19:20 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/09 15:43:30 by scambier         ###   ########.fr       */
+/*   Updated: 2024/05/09 16:34:18 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,19 +35,42 @@ unsigned int	table_crc(unsigned int i)
 
 int	calcul_crc(unsigned int crc, unsigned char *bloc, unsigned int size)
 {
+  // Initialisation
 	unsigned int c, n, v;
 	c = crc;
 
+  // Boucle de traitement des octets
 	n = 0;
 	while (n < size)
 	{
+		// Calcul du XOR avec l'octet courant
 		v = c ^ bloc[n];
-		v = v & 0xff;
+		v = v & 0xff;  // Masque pour isoler le byte de poids faible
+
+		// Recherche dans la table CRC
 		v = table_crc(v);
+
+		// Mise à jour du CRC
 		c = v ^ (c / 256);
 		n++;
 	}
 	return (c ^ 0xFFFFFFFF);
+}
+
+unsigned int crc32(const char *s, size_t n) {
+	unsigned int crc=0xFFFFFFFF;
+	
+	for(size_t i=0;i<n;i++) {
+		char ch=s[i];
+		for(size_t j=0;j<8;j++) {
+			unsigned int b=(ch^crc)&1;
+			crc>>=1;
+			if(b) crc=crc^0xEDB88320;
+			ch>>=1;
+		}
+	}
+	
+	return ~crc;
 }
 
 int	bytes_to_int(char *bytes)
@@ -121,7 +144,9 @@ t_image *load_png(char *path)
 	// ft_pmem(buffer, 25);
 	// int crc1 = validation_crc(maj_crc(0xFFFFFFFF, (unsigned short *)buffer, 21));
 	// ft_printf("calc : %x\n", crc1);
-	read_chunk(fd);
+	char *str = "a";
+	ft_printf("crc32 de [%s] : 0x%x\n", str, calcul_crc(0xFFFFFFFF, str, 1));
+	//read_chunk(fd);
 	
 	// read(fd, buffer, 4);
 	// ft_pmem(buffer, 4);
