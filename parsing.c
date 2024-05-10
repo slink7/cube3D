@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:43:09 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/10 17:45:08 by scambier         ###   ########.fr       */
+/*   Updated: 2024/05/10 18:21:48 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,7 +87,7 @@ int	load_map(char *path, t_map *map)
 	int		mode;
 	char	*temp;
 
-	ft_get_file(temp, path, 128);
+	ft_get_file(&temp, path, 128);
 	lines = ft_split(temp, '\n');
 	free(temp);
 	mode = 0;

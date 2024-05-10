@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:34:12 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/10 04:32:55 by scambier         ###   ########.fr       */
+/*   Updated: 2024/05/10 19:15:18 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,8 +40,7 @@ int	main(int argc, char **argv)
 	// print_map(&map);
 	if (argc < 2)
 		return (ft_fprintf(2, "Missing arg\n") & 0);
-	t_image *img = load_png(argv[1]);
-	if (img)
-		free(img);
+	t_image img;
+	load_png(&img, argv[1]);
 	return (0);
 }
