@@ -6,7 +6,7 @@
 /*   By: ymostows <ymostows@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 12:31:34 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/09 14:59:30 by ymostows         ###   ########.fr       */
+/*   Updated: 2024/05/10 22:49:45 by ymostows         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,7 +59,7 @@ typedef struct s_image {
 }				t_image;
 
 typedef struct s_map {
-	int			content[12][12];
+	int			content[16][18];
 	int			width;
 	int			height;
 	t_image		wall_textures;
@@ -71,21 +71,40 @@ typedef struct s_res
 {
 	int	width;
 	int	height;
-	int	tile_size;
+	int	tile_width;
+	int	tile_height;
 }	t_res;
+
+typedef	struct s_raycasting
+{
+	float	ray_angle;
+    float	rx;
+	float	ry;
+    float	xo;
+	float	yo;
+    float 	xstep;
+	float	ystep;
+    int		mx;
+	int		my;
+    int		hit_wall;
+    float	distance;
+    int 	r;
+}	t_raycasting;
+
 
 
 t_tile	map_get_at(t_map *map, int x, int y);
 void	map_set_at(t_map *map, int x, int y, t_tile v);
 
 typedef struct s_world {
-	void		*mlx_ptr;
-	void		*win_ptr;
-	t_map		map;
-	t_object	player;
-	t_image		minimap;
-	t_image		backbuffer;
-	t_res		res;
+	void			*mlx_ptr;
+	void			*win_ptr;
+	t_map			map;
+	t_object		player;
+	t_image			minimap;
+	t_image			backbuffer;
+	t_res			res;
+	t_raycasting	rays_info;
 }	t_world;
 
 #endif
