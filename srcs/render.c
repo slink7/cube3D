@@ -6,7 +6,7 @@
 /*   By: ymostows <ymostows@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:42:56 by ymostows          #+#    #+#             */
-/*   Updated: 2024/05/11 00:57:05 by ymostows         ###   ########.fr       */
+/*   Updated: 2024/05/11 01:15:25 by ymostows         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,7 +95,7 @@ void display_f_c(t_world *world, int wall_bottom, int wall_top, int shadow_inten
     while (++i < wall_top)
     {
         distance_ratio = (float)((world->res.height / 2) - i) / (float)(world->res.height / 2);
-        shadow_intensity = (255 * distance_ratio);
+        shadow_intensity = 255 * distance_ratio;
         top_color = (shadow_intensity << 16) | (shadow_intensity << 8) | shadow_intensity;
         put_pixel(&world->backbuffer, world->rays_info.r, i, top_color);
     }
@@ -117,7 +117,7 @@ void render_3d(t_world *world, int px, int py)
         wall_top = 0;
     if (wall_bottom > world->res.height)
         wall_bottom = world->res.height;
-    shadow_intensity = 255 / (world->rays_info.distance / 20);
+    shadow_intensity = 255 / (world->rays_info.distance / 30);
     wall_color = (shadow_intensity << 16) | (shadow_intensity << 8) | shadow_intensity;
     put_line(&world->backbuffer, (t_vec2i){world->rays_info.r, wall_top}, (t_vec2i){world->rays_info.r, wall_bottom}, wall_color);
     display_f_c(world, wall_bottom, wall_top, shadow_intensity);
