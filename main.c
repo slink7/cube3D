@@ -6,9 +6,11 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:34:12 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/09 15:40:00 by scambier         ###   ########.fr       */
+/*   Updated: 2024/05/10 04:32:55 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
+#include <stdlib.h>
 
 #include "libft.h"
 #include "parsing.h"
@@ -36,6 +38,10 @@ int	main(int argc, char **argv)
 	// ft_memset(&map, 0, sizeof(t_map));
 	// load_map("map.cub", &map);
 	// print_map(&map);
-	t_image *img = load_png("decoy.png");
+	if (argc < 2)
+		return (ft_fprintf(2, "Missing arg\n") & 0);
+	t_image *img = load_png(argv[1]);
+	if (img)
+		free(img);
 	return (0);
 }
