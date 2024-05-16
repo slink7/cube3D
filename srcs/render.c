@@ -6,7 +6,7 @@
 /*   By: ymostows <ymostows@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:42:56 by ymostows          #+#    #+#             */
-/*   Updated: 2024/05/11 01:15:25 by ymostows         ###   ########.fr       */
+/*   Updated: 2024/05/16 13:30:49 by ymostows         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,56 +110,105 @@ void render_3d(t_world *world, int px, int py)
     int shadow_intensity;
 
     world->rays_info.distance = sqrt((world->rays_info.rx - px) * (world->rays_info.rx - px) + (world->rays_info.ry - py) * (world->rays_info.ry - py));
-    wall_height = (int)(world->res.height / world->rays_info.distance * world->res.tile_width) / cos(world->rays_info.ray_angle - world->player.z);
-    wall_top = 256 - wall_height / 2;
-    wall_bottom = 256 + wall_height / 2;
+    wall_height = (int)(world->res.height / world->rays_info.distance * (world->res.tile_width / 1.5f)) / cos(world->rays_info.ray_angle - world->player.z);
+    wall_top = (world->res.height / 2) - wall_height / 2;
+    wall_bottom = (world->res.height / 2) + wall_height / 2;
     if (wall_top < 0)
         wall_top = 0;
     if (wall_bottom > world->res.height)
         wall_bottom = world->res.height;
-    shadow_intensity = 255 / (world->rays_info.distance / 30);
+    shadow_intensity = 255 / (world->rays_info.distance / 40);
     wall_color = (shadow_intensity << 16) | (shadow_intensity << 8) | shadow_intensity;
     put_line(&world->backbuffer, (t_vec2i){world->rays_info.r, wall_top}, (t_vec2i){world->rays_info.r, wall_bottom}, wall_color);
+    //draw_textured_wall(world, world->rays_info.mx, world->rays_info.my, wall_top, wall_bottom);
     display_f_c(world, wall_bottom, wall_top, shadow_intensity);
     put_line(&world->backbuffer, (t_vec2i){px, py}, (t_vec2i){(int)world->rays_info.rx, (int)world->rays_info.ry}, 0xFF0000);
 }
 
-
-void   raycast_calcul(t_world *world, int px, int py)
+void	find_next_hi_vi(t_world *world, float *next_hi, float *next_vi)
 {
-        world->rays_info.ray_angle = world->player.z - (PI / 12) + ((world->rays_info.r - world->res.height) * 0.0015);
-        world->rays_info.xo = px;
-        world->rays_info.yo = py;
-        world->rays_info.xstep = cos(world->rays_info.ray_angle) * 0.1f;
-        world->rays_info.ystep = sin(world->rays_info.ray_angle) * 0.1f;
-        world->rays_info.hit_wall = 0;
+	if (world->rays_info.ystep != 0)
+	{
+		if (world->rays_info.ystep < 0)
+			*next_hi = (world->rays_info.ry - ((int)(world->rays_info.ry / world->res.tile_height)) * world->res.tile_height + (0.0001f)) / (-world->rays_info.ystep);
+		else
+			*next_hi = ((int)(world->rays_info.ry / world->res.tile_height + 1) * world->res.tile_height - world->rays_info.ry) / world->rays_info.ystep;
+	}
+	if (world->rays_info.xstep != 0)
+	{
+		if (world->rays_info.xstep < 0)
+			*next_vi = (world->rays_info.rx - ((int)(world->rays_info.rx / world->res.tile_width)) * world->res.tile_width + (0.0001f)) / (-world->rays_info.xstep);
+		else
+			*next_vi = (((int)(world->rays_info.rx / world->res.tile_width) + 1) * world->res.tile_width - world->rays_info.rx) / world->rays_info.xstep;
+	}
 }
 
-void raycasting(t_world *world, int px, int py)
+int find_next_intersec(t_world *world)
 {
-    world->rays_info.r = world->res.height - 1;
+	float	nearest_i;
+    float	next_hi;
+    float	next_vi;
+
+	next_hi = INFINITY;
+	next_vi = INFINITY;
+
+	find_next_hi_vi(world, &next_hi, &next_vi);
+	if (next_hi == 0)
+		next_hi = INFINITY;
+	if (next_vi == 0)
+		next_vi = INFINITY;
+	nearest_i = fmin(next_hi, next_vi);
+	if (nearest_i <= 0)
+		return (1);
+	world->rays_info.rx += world->rays_info.xstep * nearest_i;
+	world->rays_info.ry += world->rays_info.ystep * nearest_i;
+	return (0);
+}
+
+int	check_new_intersec(t_world *world, int mx, int my)
+{
+	if (mx >= 0 && mx < world->map.width && my >= 0 && my < world->map.height)
+	{
+		if (world->map.content[my][mx] == MAP_WALL)
+		{
+			put_line(&world->backbuffer, (t_vec2i){world->rays_info.px, world->rays_info.py}, (t_vec2i){(int)world->rays_info.rx, (int)world->rays_info.ry}, 0xFF0000);
+			render_3d(world, world->rays_info.px, world->rays_info.py);
+			return (1);
+		}
+	}
+	else
+		return (1);
+	return (0);
+}
+
+void raycasting(t_world *world)
+{
+	int		mx;
+	int		my;
+	
+    world->rays_info.r = world->res.width / 2;
     while (++world->rays_info.r < world->res.width)
     {
-        raycast_calcul(world, px, py);
-        while (!world->rays_info.hit_wall)
+		world->rays_info.ray_angle = fmodf(world->player.z - (PI / 6) + ((world->rays_info.r - world->res.height) * 0.0015), 2 * PI);
+		world->rays_info.xstep = cos(world->rays_info.ray_angle);
+		world->rays_info.ystep = sin(world->rays_info.ray_angle);
+        world->rays_info.rx = world->rays_info.px;
+        world->rays_info.ry = world->rays_info.py;
+
+        while (1)
         {
-            world->rays_info.rx = world->rays_info.xo + world->rays_info.xstep;
-            world->rays_info.ry = world->rays_info.yo + world->rays_info.ystep;
-            world->rays_info.mx = (int)world->rays_info.rx / world->res.tile_width;
-            world->rays_info.my = (int)world->rays_info.ry / world->res.tile_height;
-            if (world->rays_info.mx >= 0 && world->rays_info.mx < world->map.width && world->rays_info.my >= 0 && world->rays_info.my < world->map.height && world->map.content[world->rays_info.my][world->rays_info.mx] == MAP_WALL)
-            {
-                world->rays_info.hit_wall = 1;
-                render_3d(world, px, py);
-            }
-            else
-            {
-                world->rays_info.xo = world->rays_info.rx;
-                world->rays_info.yo = world->rays_info.ry;
-            }
+            if (find_next_intersec(world))
+				break;
+            mx = (int)(world->rays_info.rx / world->res.tile_width);
+            my = (int)(world->rays_info.ry / world->res.tile_height);
+			if (check_new_intersec(world, mx, my))
+				break;
         }
     }
 }
+
+
+
 
 int move_player2(int keysym, t_world *world)
 {
@@ -257,7 +306,7 @@ int init_minimap(t_world *world)
                 color = GREY;
             else
                 color = 0;
-            draw_square(&world->minimap, i * width, j * height, width, color);
+            draw_square(&world->minimap, i * width + 1, j * height + 1, width - 2, color);
         }
     }
     return (0);
@@ -279,6 +328,13 @@ void    cpy_pixel(t_image *dest, t_image *src, int dest_i, int src_i)
         dest->data[dest_i + 2] = src->data[src_i + 1];
         dest->data[dest_i + 3] = src->data[src_i + 0];
     }
+}
+
+void    load_texture(t_world *world)
+{
+    world->map.wall_textures.addr = mlx_xpm_file_to_image(world->mlx_ptr, "textures/mur.xpm", &world->map.wall_textures.width, &world->map.wall_textures.height);
+    world->map.wall_textures.data = mlx_get_data_addr(world->map.wall_textures.addr, &world->map.wall_textures.bits_per_pixel, &world->map.wall_textures.line_length, &world->map.wall_textures.endian);
+    world->map.wall_textures.size = world->map.wall_textures.line_length / world->map.wall_textures.width;
 }
 
 void    cpy_img(t_image *dest, t_image *src, int x, int y)
@@ -303,15 +359,12 @@ void    cpy_img(t_image *dest, t_image *src, int x, int y)
 
 int render(t_world *world)
 {
-    int px;
-    int py;
-
-    px = world->player.x * (world->res.height / world->map.width);
-    py = world->player.y * (world->res.height / world->map.height);
+    world->rays_info.px = world->player.x * (world->res.height / world->map.width);
+    world->rays_info.py = world->player.y * (world->res.height / world->map.height);
     cpy_img(&world->backbuffer, &world->minimap, 0, 0);
-    draw_square(&world->backbuffer, px - 4, py - 4, 8, 0x00FF00);
-    put_line(&world->backbuffer, (t_vec2i){px , py}, (t_vec2i){px + cos(world->player.z) * 16.0f, py + sin(world->player.z) * 16.0f}, 0x00FF00);
-    raycasting(world, px, py);
+    draw_square(&world->backbuffer, world->rays_info.px - 4, world->rays_info.py - 4, 8, 0x00FF00);
+    put_line(&world->backbuffer, (t_vec2i){world->rays_info.px , world->rays_info.py}, (t_vec2i){world->rays_info.px + cos(world->player.z) * 16.0f, world->rays_info.py + sin(world->player.z) * 16.0f}, 0x00FF00);
+    raycasting(world);
     mlx_put_image_to_window(world->mlx_ptr, world->win_ptr, world->backbuffer.addr, 0, 0);
     return (0);
 }
@@ -320,7 +373,7 @@ int main()
 {
     t_world world = {
         mlx_init(),
-        mlx_new_window(world.mlx_ptr, 1024, 512, "cube3d"),
+        mlx_new_window(world.mlx_ptr, 1536, 768, "cube3d"),
         {
             {
                 { 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
@@ -342,23 +395,24 @@ int main()
             },
             18,
             16,
-            {0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0},
             0xFF000000,
             0x00FFFF00
         },
         {
-            4.0f,
-            5.0f,
-            0.0f
+            10.5f,
+            3.5f,
+            4.7f
         },
         {0},
         {0},
-        {1024, 512, 0, 0},
+        {1536, 768, 0, 0},
         {0}
     };
     world.res.tile_width = (world.res.width / 2) / world.map.width;
     world.res.tile_height = world.res.height / world.map.height;
     init_img(&world, &world.backbuffer, world.res.width, world.res.height);
+    //load_texture(&world);
     /*mlx_hook(world.win_ptr, KeyPress, KeyPressMask,
 			&ft_move_player, s_game);*/
 	mlx_hook(world.win_ptr, DestroyNotify, \

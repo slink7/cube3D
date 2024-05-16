@@ -6,7 +6,7 @@
 /*   By: ymostows <ymostows@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 12:31:34 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/10 22:49:45 by ymostows         ###   ########.fr       */
+/*   Updated: 2024/05/16 13:18:00 by ymostows         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,6 +56,7 @@ typedef struct s_image {
 	int		width;
 	int		height;
 	int		endian;
+	int		size;
 }				t_image;
 
 typedef struct s_map {
@@ -80,15 +81,14 @@ typedef	struct s_raycasting
 	float	ray_angle;
     float	rx;
 	float	ry;
-    float	xo;
-	float	yo;
     float 	xstep;
 	float	ystep;
     int		mx;
 	int		my;
-    int		hit_wall;
     float	distance;
     int 	r;
+	int		px;
+	int		py;
 }	t_raycasting;
 
 

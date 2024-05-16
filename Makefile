@@ -6,7 +6,7 @@
 #    By: ymostows <ymostows@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/05/03 14:57:20 by ymostows          #+#    #+#              #
-#    Updated: 2024/05/06 16:40:28 by ymostows         ###   ########.fr        #
+#    Updated: 2024/05/13 20:42:42 by ymostows         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,7 +14,7 @@ NAME		=	cube3d
 
 CC			=	clang
 
-FLAG		=	-Wall -Werror -Wextra -g3
+FLAG		=	-Wall -Werror -Wextra -g
 
 LIBFT_PATH	=	./libft/
 
