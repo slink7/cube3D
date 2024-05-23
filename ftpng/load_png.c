@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/08 22:19:20 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/10 19:15:49 by scambier         ###   ########.fr       */
+/*   Updated: 2024/05/13 18:07:02 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,11 +17,9 @@
 
 #include "libft.h"
 #include "structs.h"
+#include "parsing.h"
 
-typedef unsigned char	t_uint8;
-typedef unsigned short	t_uint16;
-typedef unsigned int	t_uint32;
-typedef unsigned long	t_uint64;
+
 
 t_uint32	crc32(t_uint8 *bloc, t_uint32 size)
 {
@@ -97,6 +95,7 @@ int	load_png(t_image *dst, char *path)
 		free(file);
 		return ((ft_fprintf(2, "Error: Invalid PNG header\n") & 0));
 	}
+	ft_pmem(file, file_length);
 	read_chunk(&ihdr_chunk, file + 8, file_length - 8);
 	if (ft_memcmp(ihdr_chunk.data, "IHDR", 4) != 0)
 	{
@@ -127,6 +126,10 @@ int	load_png(t_image *dst, char *path)
 	read_chunk(&chunk, file + file_index, file_length - file_index);
 	while (ft_memcmp(chunk.data, "IEND", 4) != 0)
 	{
+		if (ft_memcmp(chunk.data, "IDAT", 4) == 0)
+		{
+			inflate(0, 0, chunk.data + 4, chunk.length);
+		}
 		ft_pmem(chunk.data, chunk.length + 4);
 		file_index += chunk.length + 12;
 		read_chunk(&chunk, file + file_index, file_length - file_index);
