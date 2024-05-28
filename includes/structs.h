@@ -6,14 +6,14 @@
 /*   By: ymostows <ymostows@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 12:31:34 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/16 13:18:00 by ymostows         ###   ########.fr       */
+/*   Updated: 2024/05/27 14:33:43 by ymostows         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef STRUCTS_H
 # define STRUCTS_H
 
-# define PI 3.1415926535
+# define PI 3.14159265358979323846
 
 # define GREY	0x808080
 # define WHITE	0xFFFFFF
@@ -28,10 +28,10 @@
 # define MAP_WALL	1
 # define MAP_FLOOR	2
 
-# define EAST	0
-# define NORTH	1
+# define NORTH	0
+# define SOUTH	1
 # define WEST	2
-# define SOUTH	3
+# define EAST	3
 
 typedef unsigned int	t_color;
 
@@ -41,9 +41,12 @@ typedef struct s_vec2i {
 }	t_vec2i;
 
 typedef struct s_object {
-	float	x;
-	float	y;
-	float	z;
+	float	pos_x;
+	float	pos_y;
+	float	dir_x;
+	float	dir_y;
+	float	plane_x;
+	float	plane_y;
 }	t_object;
 
 typedef unsigned short	t_tile;
@@ -81,14 +84,16 @@ typedef	struct s_raycasting
 	float	ray_angle;
     float	rx;
 	float	ry;
-    float 	xstep;
-	float	ystep;
+    float 	xdir;
+	float	ydir;
     int		mx;
 	int		my;
     float	distance;
     int 	r;
 	int		px;
 	int		py;
+	int		mpx;
+    int		mpy;
 }	t_raycasting;
 
 

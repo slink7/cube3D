@@ -6,13 +6,135 @@
 /*   By: ymostows <ymostows@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:42:56 by ymostows          #+#    #+#             */
-/*   Updated: 2024/05/16 13:30:49 by ymostows         ###   ########.fr       */
+/*   Updated: 2024/05/28 20:30:07 by ymostows         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "incl.h"
 #include "structs.h"
+#include "incl.h"
 #include <math.h>
+#include <mlx.h>
+
+#define WIN_WIDTH 1920
+#define WIN_HEIGHT 1080
+#define MOVE_SPEED 0.2
+#define MOUSE_SENS 0.005
+#define TEXTURE_SIZE 64
+
+typedef struct s_rays {
+    double	camera_x;
+    double	ray_dir_x;
+    double	ray_dir_y;
+    double	delta_dist_x;
+    double	delta_dist_y;
+	double	side_dist_x;
+	double	side_dist_y;
+    double  step;
+    double  tex_pos;
+    double  wall_x;
+    int		map_x;
+    int		map_y;
+    int		step_x;
+    int		step_y;
+	int		side;
+	int 	line_height;
+	int		draw_start;
+	int		draw_end;
+    int     tex_num;
+    int     tex_x;
+    int     tex_y;
+} t_rays;
+
+#define NUM_TEXTURES 4
+
+typedef struct s_imgs {
+    void    *img;
+    int     *addr;
+    int     bpp;
+    int     line_length;
+    int     endian;
+} t_imgs;
+
+typedef struct s_mouse {
+    int last_x;
+    int last_y;
+} t_mouse;
+
+typedef struct s_data {
+    void    *mlx_ptr;
+    void    *win_ptr;
+    int     world_map[24][24];
+    double  pos_x;
+    double  pos_y;
+    double  dir_x;
+    double  dir_y;
+    double  plane_x;
+    double  plane_y;
+    t_imgs   texture[NUM_TEXTURES];
+    int     *texture_buffer[NUM_TEXTURES];
+    t_imgs   img;
+	t_image	backbuffer;
+    t_mouse *mouse;
+} t_data;
+
+void rotate_view(t_data *data, double angle)
+{
+    double old_dir_x;
+    double old_plane_x;
+
+    old_dir_x = data->dir_x;
+    old_plane_x = data->plane_x;
+
+    data->dir_x = data->dir_x * cos(angle) - data->dir_y * sin(angle);
+    data->dir_y = old_dir_x * sin(angle) + data->dir_y * cos(angle);
+    data->plane_x = data->plane_x * cos(angle) - data->plane_y * sin(angle);
+    data->plane_y = old_plane_x * sin(angle) + data->plane_y * cos(angle);
+}
+
+int mouse_move(int x, int y, t_data *data) {
+    t_mouse *mouse = (t_mouse *)data->mouse;
+    double  delta_x;
+
+    if (x < 0 || x >= WIN_WIDTH || y < 0 || y >= WIN_HEIGHT) {
+        mouse->last_x = x;
+        mouse->last_y = y;
+        return 0;
+    }
+
+    delta_x = x - mouse->last_x;
+    rotate_view(data, -delta_x * MOUSE_SENS);
+    mouse->last_x = x;
+    mouse->last_y = y;
+
+    return 0;
+}
+
+void load_texture(t_data *data, int index, char *path)
+{
+    t_imgs img;
+    int x;
+	int	y;
+	
+    img.img = mlx_xpm_file_to_image(data->mlx_ptr, path, &x, &y);
+    if (!img.img || x != TEXTURE_SIZE || y != TEXTURE_SIZE)
+        return;
+    img.addr = (int *)mlx_get_data_addr(img.img, &img.bpp, &img.line_length, &img.endian);
+    data->texture_buffer[index] = malloc(sizeof(int) * TEXTURE_SIZE * TEXTURE_SIZE);
+    for (int i = 0; i < TEXTURE_SIZE; i++) {
+        for (int j = 0; j < TEXTURE_SIZE; j++) {
+            data->texture_buffer[index][i * TEXTURE_SIZE + j] = img.addr[i * TEXTURE_SIZE + j];
+        }
+    }
+    mlx_destroy_image(data->mlx_ptr, img.img);
+}
+
+void init_textures(t_data *data)
+{
+    load_texture(data, NORTH, "textures/wall2.xpm");
+    load_texture(data, SOUTH, "textures/wall2.xpm");
+    load_texture(data, WEST, "textures/wall2.xpm");
+    load_texture(data, EAST, "textures/wall2.xpm");
+}
 
 
 void    put_pixel(t_image *img, int x, int y, int color)
@@ -36,391 +158,286 @@ void    put_pixel(t_image *img, int x, int y, int color)
     }
 }
 
-static void	put_line_v(t_image *img, t_vec2i *v0, t_vec2i *v1, int color)
+void init_imgs(t_data *data,t_image *img, int width, int heigth)
 {
-	float	a;
-	float	b;
-	int		k;
-
-	if (v0->x < 0 || v0->x > img->width || v0->y < 0 || v0->y > img->height)
-		if (v1->x < 0 || v1->x > img->width || v1->y < 0 || v1->y > img->height)
-			return ;
-	a = (float)(v1->x - v0->x) / (float)(v1->y - v0->y);
-	b = -a * (float)v0->y + (float)v0->x;
-	k = ft_min(v0->y, v1->y) - 1;
-	while (++k <= ft_max(v0->y, v1->y))
-		put_pixel(img, a * (float)k + b, k, color);
-}
-
-static void	put_line_h(t_image *img, t_vec2i *v0, t_vec2i *v1, int color)
-{
-	float	a;
-	float	b;
-	int		k;
-
-	if (v0->x < 0 || v0->x > img->width || v0->y < 0 || v0->y > img->height)
-		if (v1->x < 0 || v1->x > img->width || v1->y < 0 || v1->y > img->height)
-			return ;
-	a = (float)(v1->y - v0->y) / (float)(v1->x - v0->x);
-	b = -a * (float)v0->x + (float) v0->y;
-	k = ft_min(v0->x, v1->x) - 1;
-	while (++k <= ft_max(v0->x, v1->x))
-		put_pixel(img, k, a * (float)k + b, color);
-}
-
-void	put_line(t_image *img, t_vec2i v0, t_vec2i v1, int color)
-{
-	if (ft_abs(v1.x - v0.x) > ft_abs(v1.y - v0.y))
-		put_line_h(img, &v0, &v1, color);
-	else
-		put_line_v(img, &v0, &v1, color);
-}
-
-void display_f_c(t_world *world, int wall_bottom, int wall_top, int shadow_intensity)
-{
-    int     i;
-    float   distance_ratio;
-    int     top_color;
-    int     floor_color;
-
-    i = wall_bottom - 1;
-    while (++i < world->res.height)
-    {
-        distance_ratio = (float)(i - (world->res.height / 2)) / ((float)(world->res.height / 2));
-        shadow_intensity = 255 * distance_ratio;
-        floor_color = (shadow_intensity << 16) | (shadow_intensity << 8) | shadow_intensity;
-        put_pixel(&world->backbuffer, world->rays_info.r, i, floor_color);
-    }
-    i = -1;
-    while (++i < wall_top)
-    {
-        distance_ratio = (float)((world->res.height / 2) - i) / (float)(world->res.height / 2);
-        shadow_intensity = 255 * distance_ratio;
-        top_color = (shadow_intensity << 16) | (shadow_intensity << 8) | shadow_intensity;
-        put_pixel(&world->backbuffer, world->rays_info.r, i, top_color);
-    }
-}
-
-void render_3d(t_world *world, int px, int py)
-{
-    int wall_height;
-    int wall_top;
-    int wall_bottom;
-    int wall_color;
-    int shadow_intensity;
-
-    world->rays_info.distance = sqrt((world->rays_info.rx - px) * (world->rays_info.rx - px) + (world->rays_info.ry - py) * (world->rays_info.ry - py));
-    wall_height = (int)(world->res.height / world->rays_info.distance * (world->res.tile_width / 1.5f)) / cos(world->rays_info.ray_angle - world->player.z);
-    wall_top = (world->res.height / 2) - wall_height / 2;
-    wall_bottom = (world->res.height / 2) + wall_height / 2;
-    if (wall_top < 0)
-        wall_top = 0;
-    if (wall_bottom > world->res.height)
-        wall_bottom = world->res.height;
-    shadow_intensity = 255 / (world->rays_info.distance / 40);
-    wall_color = (shadow_intensity << 16) | (shadow_intensity << 8) | shadow_intensity;
-    put_line(&world->backbuffer, (t_vec2i){world->rays_info.r, wall_top}, (t_vec2i){world->rays_info.r, wall_bottom}, wall_color);
-    //draw_textured_wall(world, world->rays_info.mx, world->rays_info.my, wall_top, wall_bottom);
-    display_f_c(world, wall_bottom, wall_top, shadow_intensity);
-    put_line(&world->backbuffer, (t_vec2i){px, py}, (t_vec2i){(int)world->rays_info.rx, (int)world->rays_info.ry}, 0xFF0000);
-}
-
-void	find_next_hi_vi(t_world *world, float *next_hi, float *next_vi)
-{
-	if (world->rays_info.ystep != 0)
-	{
-		if (world->rays_info.ystep < 0)
-			*next_hi = (world->rays_info.ry - ((int)(world->rays_info.ry / world->res.tile_height)) * world->res.tile_height + (0.0001f)) / (-world->rays_info.ystep);
-		else
-			*next_hi = ((int)(world->rays_info.ry / world->res.tile_height + 1) * world->res.tile_height - world->rays_info.ry) / world->rays_info.ystep;
-	}
-	if (world->rays_info.xstep != 0)
-	{
-		if (world->rays_info.xstep < 0)
-			*next_vi = (world->rays_info.rx - ((int)(world->rays_info.rx / world->res.tile_width)) * world->res.tile_width + (0.0001f)) / (-world->rays_info.xstep);
-		else
-			*next_vi = (((int)(world->rays_info.rx / world->res.tile_width) + 1) * world->res.tile_width - world->rays_info.rx) / world->rays_info.xstep;
-	}
-}
-
-int find_next_intersec(t_world *world)
-{
-	float	nearest_i;
-    float	next_hi;
-    float	next_vi;
-
-	next_hi = INFINITY;
-	next_vi = INFINITY;
-
-	find_next_hi_vi(world, &next_hi, &next_vi);
-	if (next_hi == 0)
-		next_hi = INFINITY;
-	if (next_vi == 0)
-		next_vi = INFINITY;
-	nearest_i = fmin(next_hi, next_vi);
-	if (nearest_i <= 0)
-		return (1);
-	world->rays_info.rx += world->rays_info.xstep * nearest_i;
-	world->rays_info.ry += world->rays_info.ystep * nearest_i;
-	return (0);
-}
-
-int	check_new_intersec(t_world *world, int mx, int my)
-{
-	if (mx >= 0 && mx < world->map.width && my >= 0 && my < world->map.height)
-	{
-		if (world->map.content[my][mx] == MAP_WALL)
-		{
-			put_line(&world->backbuffer, (t_vec2i){world->rays_info.px, world->rays_info.py}, (t_vec2i){(int)world->rays_info.rx, (int)world->rays_info.ry}, 0xFF0000);
-			render_3d(world, world->rays_info.px, world->rays_info.py);
-			return (1);
-		}
-	}
-	else
-		return (1);
-	return (0);
-}
-
-void raycasting(t_world *world)
-{
-	int		mx;
-	int		my;
-	
-    world->rays_info.r = world->res.width / 2;
-    while (++world->rays_info.r < world->res.width)
-    {
-		world->rays_info.ray_angle = fmodf(world->player.z - (PI / 6) + ((world->rays_info.r - world->res.height) * 0.0015), 2 * PI);
-		world->rays_info.xstep = cos(world->rays_info.ray_angle);
-		world->rays_info.ystep = sin(world->rays_info.ray_angle);
-        world->rays_info.rx = world->rays_info.px;
-        world->rays_info.ry = world->rays_info.py;
-
-        while (1)
-        {
-            if (find_next_intersec(world))
-				break;
-            mx = (int)(world->rays_info.rx / world->res.tile_width);
-            my = (int)(world->rays_info.ry / world->res.tile_height);
-			if (check_new_intersec(world, mx, my))
-				break;
-        }
-    }
-}
-
-
-
-
-int move_player2(int keysym, t_world *world)
-{
-    if (keysym == KEY_UP)
-    {
-        world->player.x += cos(world->player.z) * 0.1f;
-        world->player.y += sin(world->player.z) * 0.1f;
-        return (1);
-    }
-    if (keysym == KEY_LEFT)
-    {
-        world->player.x += sin(world->player.z) * 0.1f;
-        world->player.y -= cos(world->player.z) * 0.1f;
-        return (1);
-    }
-    if (keysym == XK_Left)
-    {
-        world->player.z -=0.1f;
-        return (1);
-    }
-    if (keysym == XK_Right)
-    {
-        world->player.z +=0.1f;
-        return (1);
-    }
-    return (0);
-}
-
-int move_player(int keysym, t_world *world)
-{
-    if (keysym == KEY_DOWN)
-    {
-        world->player.x -= cos(world->player.z) * 0.1f;
-        world->player.y -= sin(world->player.z) * 0.1f;
-        return (1);
-    }
-    if (keysym == KEY_RIGHT)
-    {
-        world->player.x -= sin(world->player.z) * 0.1f;
-        world->player.y += cos(world->player.z) * 0.1f;
-        return (1);
-    }
-    return move_player2(keysym, world);
-}
-
-int	close_game(t_world *world)
-{
-    (void)world;
-	exit (EXIT_FAILURE);
-}
-
-void draw_square(t_image *img, int x, int y, int size, int color)
-{
-    int i;
-    int j;
-
-    j = y - 1;
-    while (++j < y + size)
-    {
-        i = x - 1;
-        while (++i < x + size)
-            put_pixel(img, i, j, color);
-    }
-}
-
-void init_img(t_world *world,t_image *img, int width, int heigth)
-{
-    img->addr = mlx_new_image(world->mlx_ptr, width, heigth);
+    img->addr = mlx_new_image(data->mlx_ptr, width, heigth);
     img->data = mlx_get_data_addr(img->addr, &img->bits_per_pixel, &img->line_length, &img->endian);
     img->width = width;
     img->height = heigth;
 }
 
-
-int init_minimap(t_world *world)
+void move_forward(t_data *data)
 {
-    int i;
-    int j;
-    int height;
-    int width;
-    int color;
-
-    height = world->res.height / world->map.height;
-    width = (world->res.width / 2) / world->map.width;
-    init_img(world, &world->minimap, world->res.width, world->res.height);
-    j = -1;
-    while (++j < world->map.height)
-    {
-        i = -1;
-        while (++i < world->map.width)
-        {
-            if (world->map.content[j][i] == MAP_WALL)
-                color = WHITE;
-            else if (world->map.content[j][i] == MAP_FLOOR)
-                color = GREY;
-            else
-                color = 0;
-            draw_square(&world->minimap, i * width + 1, j * height + 1, width - 2, color);
-        }
-    }
-    return (0);
+    if (data->world_map[(int)(data->pos_x + data->dir_x * MOVE_SPEED)][(int)(data->pos_y)] != 1)
+        data->pos_x += data->dir_x * MOVE_SPEED;
+    if (data->world_map[(int)(data->pos_x)][(int)(data->pos_y + data->dir_y * MOVE_SPEED)] != 1)
+        data->pos_y += data->dir_y * MOVE_SPEED;
 }
 
-void    cpy_pixel(t_image *dest, t_image *src, int dest_i, int src_i)
-{   
-    if (dest->endian == src->endian)
+void move_backward(t_data *data)
+{
+    if (data->world_map[(int)(data->pos_x - data->dir_x * MOVE_SPEED)][(int)(data->pos_y)] != 1)
+        data->pos_x -= data->dir_x * MOVE_SPEED;
+    if (data->world_map[(int)(data->pos_x)][(int)(data->pos_y - data->dir_y * MOVE_SPEED)] != 1)
+        data->pos_y -= data->dir_y * MOVE_SPEED;
+}
+
+void strafe_right(t_data *data)
+{
+    double strafe_x;
+    double strafe_y;
+    
+    strafe_x = data->dir_y * MOVE_SPEED;
+    strafe_y = -data->dir_x * MOVE_SPEED;
+    if (data->world_map[(int)(data->pos_x + strafe_x)][(int)(data->pos_y)] != 1)
+        data->pos_x += strafe_x;
+    if (data->world_map[(int)(data->pos_x)][(int)(data->pos_y + strafe_y)] != 1)
+        data->pos_y += strafe_y;
+}
+
+void strafe_left(t_data *data)
+{
+    double strafe_x;
+    double strafe_y;
+    
+    strafe_x = -data->dir_y * MOVE_SPEED;
+    strafe_y = data->dir_x * MOVE_SPEED;
+    if (data->world_map[(int)(data->pos_x + strafe_x)][(int)(data->pos_y)] != 1)
+        data->pos_x += strafe_x;
+    if (data->world_map[(int)(data->pos_x)][(int)(data->pos_y + strafe_y)] != 1)
+        data->pos_y += strafe_y;
+}
+int key_press(int keycode, t_data *data)
+{
+    if (keycode == 'z')
+        move_forward(data);
+    if (keycode == 's')
+        move_backward(data);
+    if (keycode == 'q')
+        strafe_left(data);
+    if (keycode == 'd')
+        strafe_right(data);
+    return 0;
+}
+
+void    render_floor_ceiling(t_data *data)
+{
+    int     x;
+    int     y;
+    
+    y = -1;
+    while (++y < WIN_HEIGHT / 2)
     {
-        dest->data[dest_i + 0] = src->data[src_i + 0];
-        dest->data[dest_i + 1] = src->data[src_i + 1];
-        dest->data[dest_i + 2] = src->data[src_i + 2];
-        dest->data[dest_i + 3] = src->data[src_i + 3];
+        x= -1;
+        while (++x < WIN_WIDTH)
+            put_pixel(&data->backbuffer, x, y, 0x009AED);
+    }
+    y = WIN_HEIGHT / 2 -1;
+    while (++y < WIN_HEIGHT)
+    {
+        x = -1;
+        while (++x < WIN_WIDTH)
+            put_pixel(&data->backbuffer, x, y, 0x2D610C);
+    }
+}
+
+void    calcul_delta_dist(t_data *data, t_rays *vars, int x)
+{   
+    vars->camera_x = 2 * x / (double)WIN_WIDTH - 1;
+    vars->ray_dir_x = data->dir_x + data->plane_x * vars->camera_x;
+    vars->ray_dir_y = data->dir_y + data->plane_y * vars->camera_x;
+
+    vars->map_x = (int)data->pos_x;
+    vars->map_y = (int)data->pos_y;
+
+    vars->delta_dist_x = fabs(1 / vars->ray_dir_x);
+    vars->delta_dist_y = fabs(1 / vars->ray_dir_y);
+}
+
+void    calcul_side_dist(t_data *data, t_rays *vars)
+{   
+        if (vars->ray_dir_x < 0)
+        {
+            vars->step_x = -1;
+            vars->side_dist_x = (data->pos_x - vars->map_x) * vars->delta_dist_x;
+        }
+        else
+        {
+            vars->step_x = 1;
+            vars->side_dist_x = (vars->map_x + 1.0 - data->pos_x) * vars->delta_dist_x;
+        }
+
+        if (vars->ray_dir_y < 0)
+        {
+            vars->step_y = -1;
+            vars->side_dist_y = (data->pos_y - vars->map_y) * vars->delta_dist_y;
+        }
+        else
+        {
+            vars->step_y = 1;
+            vars->side_dist_y = (vars->map_y + 1.0 - data->pos_y) * vars->delta_dist_y;
+        }
+}
+
+void    calcul_wall_pos(t_data *data, t_rays *vars)
+{   
+    while (1)
+    {
+        if (vars->side_dist_x < vars->side_dist_y)
+        {
+            vars->side_dist_x += vars->delta_dist_x;
+            vars->map_x += vars->step_x;
+            vars->side = 0;
+        }
+        else
+        {
+            vars->side_dist_y += vars->delta_dist_y;
+            vars->map_y += vars->step_y;
+            vars->side = 1;
+        }
+        if (data->world_map[vars->map_x][vars->map_y] > 0 && data->world_map[vars->map_x][vars->map_y] != 2) 
+            break;
+    }
+}
+
+void    calcul_wall_size(t_data *data, t_rays *vars)
+{   
+    double perp_wall_dist;
+    
+    if (vars->side == 0)
+        perp_wall_dist = (vars->map_x - data->pos_x + (1 - vars->step_x) / 2) / vars->ray_dir_x;
+    else
+        perp_wall_dist = (vars->map_y - data->pos_y + (1 - vars->step_y) / 2) / vars->ray_dir_y;
+    vars->line_height = (int)(WIN_HEIGHT / perp_wall_dist);
+    vars->draw_start = -vars->line_height / 2 + WIN_HEIGHT / 2;
+    if (vars->draw_start < 0)
+        vars->draw_start = 0;
+    vars->draw_end = vars->line_height / 2 + WIN_HEIGHT / 2;
+    if (vars->draw_end >= WIN_HEIGHT)
+        vars->draw_end = WIN_HEIGHT - 1;
+    if (vars->side == 0)
+        vars->wall_x = data->pos_y + perp_wall_dist * vars->ray_dir_y;
+    else
+        vars->wall_x = data->pos_x + perp_wall_dist * vars->ray_dir_x;
+}
+
+
+void select_texture(t_rays *rays)
+{
+    if (rays->side == 0)
+    {
+        if (rays->ray_dir_x > 0)
+            rays->tex_num = EAST;
+        else
+            rays->tex_num = WEST;
     }
     else
     {
-        dest->data[dest_i + 0] = src->data[src_i + 3];
-        dest->data[dest_i + 1] = src->data[src_i + 2];
-        dest->data[dest_i + 2] = src->data[src_i + 1];
-        dest->data[dest_i + 3] = src->data[src_i + 0];
+        if (rays->ray_dir_y > 0)
+            rays->tex_num = SOUTH;
+        else
+            rays->tex_num = NORTH;
     }
 }
 
-void    load_texture(t_world *world)
+void    handle_textures(t_rays *vars)
 {
-    world->map.wall_textures.addr = mlx_xpm_file_to_image(world->mlx_ptr, "textures/mur.xpm", &world->map.wall_textures.width, &world->map.wall_textures.height);
-    world->map.wall_textures.data = mlx_get_data_addr(world->map.wall_textures.addr, &world->map.wall_textures.bits_per_pixel, &world->map.wall_textures.line_length, &world->map.wall_textures.endian);
-    world->map.wall_textures.size = world->map.wall_textures.line_length / world->map.wall_textures.width;
+    vars->wall_x -= floor(vars->wall_x);
+    vars->tex_x = (int)(vars->wall_x * (double)TEXTURE_SIZE);
+    if ((vars->side == 0 && vars->ray_dir_x > 0) || (vars->side == 1 && vars->ray_dir_y < 0))
+        vars->tex_x = TEXTURE_SIZE - vars->tex_x - 1;
+    vars->step = 1.0 * TEXTURE_SIZE / vars->line_height;
+    vars->tex_pos = (vars->draw_start - WIN_HEIGHT / 2 + vars->line_height / 2) * vars->step;
 }
 
-void    cpy_img(t_image *dest, t_image *src, int x, int y)
+void    draw_walls(t_data *data, t_rays *vars, int x)
 {
-    int i;
-    int j;
-    int dest_i;
-    int src_i;
-
-    j = y - 1;
-    while (++j < src->height)
+    int y;
+    int tex_y;
+    int color;
+    
+    y = vars->draw_start - 1;
+    while (++y < vars->draw_end)
     {
-        i = x - 1;
-        while (++i < src->line_length)
-        {
-            dest_i = dest->line_length * (y + j) + (x + i) * (dest->bits_per_pixel / 8);
-            src_i = src->line_length * j + i * (src->bits_per_pixel / 8);
-            cpy_pixel(dest, src, dest_i, src_i);
+        tex_y = (int)vars->tex_pos & (TEXTURE_SIZE - 1);
+        vars->tex_pos += vars->step;
+        color = data->texture_buffer[vars->tex_num][TEXTURE_SIZE * tex_y + vars->tex_x];
+        if (vars->side == 1)
+            color = (color >> 1) & 0x7F7F7F;
+        put_pixel(&data->backbuffer, x, y, color);
+    }
+}
+
+int render_frame(t_data *data) {
+    t_rays  vars;
+    int     x;
+    
+    render_floor_ceiling(data);
+    x = -1;
+    while (++x < WIN_WIDTH)
+    {
+        calcul_delta_dist(data, &vars, x);
+        calcul_side_dist(data, &vars);
+        calcul_wall_pos(data, &vars);
+        calcul_wall_size(data, &vars);
+        select_texture(&vars);
+        handle_textures(&vars);
+        draw_walls(data, &vars, x);
+    }
+	mlx_put_image_to_window(data->mlx_ptr, data->win_ptr, data->backbuffer.addr, 0, 0);
+    return 0;
+}
+
+
+int main() 
+{
+    t_data  data;
+    t_mouse mouse;
+
+    data.mlx_ptr = mlx_init();
+    data.win_ptr = mlx_new_window(data.mlx_ptr, WIN_WIDTH, WIN_HEIGHT, "Cub3D");
+    
+    mouse.last_x = WIN_WIDTH / 2;
+    mouse.last_y = WIN_HEIGHT / 2;
+    data.mouse = &mouse;
+
+    int world_map[24][24] = {
+        { 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+        { 0, 1, 1, 1, 1, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
+        { 1, 1, 2, 2, 2, 2, 1, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
+        { 1, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
+        { 1, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
+        { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
+        { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1 },
+        { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
+        { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
+        { 1, 2, 2, 2, 1, 1, 2, 2, 1, 2, 2, 2, 2, 2, 1, 2, 2, 1 },
+        { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
+        { 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 1 },
+        { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
+        { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 1 },
+        { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
+        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+    };
+
+    for (int i = 0; i < 24; i++) {
+        for (int j = 0; j < 24; j++) {
+            data.world_map[i][j] = world_map[i][j];
         }
     }
-}
 
-int render(t_world *world)
-{
-    world->rays_info.px = world->player.x * (world->res.height / world->map.width);
-    world->rays_info.py = world->player.y * (world->res.height / world->map.height);
-    cpy_img(&world->backbuffer, &world->minimap, 0, 0);
-    draw_square(&world->backbuffer, world->rays_info.px - 4, world->rays_info.py - 4, 8, 0x00FF00);
-    put_line(&world->backbuffer, (t_vec2i){world->rays_info.px , world->rays_info.py}, (t_vec2i){world->rays_info.px + cos(world->player.z) * 16.0f, world->rays_info.py + sin(world->player.z) * 16.0f}, 0x00FF00);
-    raycasting(world);
-    mlx_put_image_to_window(world->mlx_ptr, world->win_ptr, world->backbuffer.addr, 0, 0);
-    return (0);
-}
+    data.pos_x = 10.0;
+    data.pos_y = 12.0;
+    data.dir_x = -1.0;
+    data.dir_y = 0.0;
+    data.plane_x = 0.0;
+    data.plane_y = 0.66;
 
-int main()
-{
-    t_world world = {
-        mlx_init(),
-        mlx_new_window(world.mlx_ptr, 1536, 768, "cube3d"),
-        {
-            {
-                { 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
-                { 0, 1, 1, 1, 1, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
-                { 1, 1, 2, 2, 2, 2, 1, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
-                { 1, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
-                { 1, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
-                { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
-                { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1 },
-                { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
-                { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
-                { 1, 2, 2, 2, 1, 1, 2, 2, 1, 2, 2, 2, 2, 2, 1, 2, 2, 1 },
-                { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
-                { 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 1 },
-                { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
-                { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 1 },
-                { 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
-                { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
-            },
-            18,
-            16,
-            {0,0,0,0,0,0,0,0},
-            0xFF000000,
-            0x00FFFF00
-        },
-        {
-            10.5f,
-            3.5f,
-            4.7f
-        },
-        {0},
-        {0},
-        {1536, 768, 0, 0},
-        {0}
-    };
-    world.res.tile_width = (world.res.width / 2) / world.map.width;
-    world.res.tile_height = world.res.height / world.map.height;
-    init_img(&world, &world.backbuffer, world.res.width, world.res.height);
-    //load_texture(&world);
-    /*mlx_hook(world.win_ptr, KeyPress, KeyPressMask,
-			&ft_move_player, s_game);*/
-	mlx_hook(world.win_ptr, DestroyNotify, \
-		ButtonPressMask, close_game, &world);
-    mlx_hook(world.win_ptr, KeyPress, KeyPressMask,
-			&move_player, &world);
-	mlx_loop_hook(world.mlx_ptr, &render, &world);
-    //draw_player(world.player, line_bytes, endian, color, buffer);
-    init_minimap(&world);
-    mlx_loop(world.mlx_ptr);
+    init_textures(&data);
+	init_imgs(&data, &data.backbuffer, WIN_WIDTH, WIN_HEIGHT);
+    mlx_hook(data.win_ptr, 2, 1L << 0, key_press, &data);
+    mlx_hook(data.win_ptr, 6, 1L << 6, mouse_move, &data);
+    mlx_loop_hook(data.mlx_ptr, &render_frame, &data);
+    mlx_loop(data.mlx_ptr);
+    return 0;
 }
