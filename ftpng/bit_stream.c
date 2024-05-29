@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/23 16:51:28 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/23 17:14:18 by scambier         ###   ########.fr       */
+/*   Updated: 2024/05/24 12:49:27 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,7 +54,7 @@ t_uint32 peek_bits_reversed(t_bit_stream *stream, t_uint32 bits_to_peek) {
 
 	out = 0;
 	if(bits_to_peek > stream->bits_left) {
-        sh_png_get_bits(stream, bits_to_peek);
+        get_bits(stream, bits_to_peek);
     }
     k = -1;
 	while (++k < bits_to_peek)

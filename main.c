@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:34:12 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/10 19:15:18 by scambier         ###   ########.fr       */
+/*   Updated: 2024/05/24 12:57:22 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 
 #include "libft.h"
 #include "parsing.h"
+#include "ftpng.h"
 
 void	print_map(t_map *map)
 {

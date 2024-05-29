@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/08 22:19:20 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/13 18:07:02 by scambier         ###   ########.fr       */
+/*   Updated: 2024/05/24 12:55:54 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include <stdint.h>
 
 #include "libft.h"
+#include "ftpng.h"
 #include "structs.h"
 #include "parsing.h"
 
@@ -93,14 +94,14 @@ int	load_png(t_image *dst, char *path)
 	if (ft_memcmp(file, "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A", 8) != 0)
 	{
 		free(file);
-		return ((ft_fprintf(2, "Error: Invalid PNG header\n") & 0));
+		return (ft_fprintf(2, "Error: Invalid PNG header\n") & 0);
 	}
 	ft_pmem(file, file_length);
 	read_chunk(&ihdr_chunk, file + 8, file_length - 8);
 	if (ft_memcmp(ihdr_chunk.data, "IHDR", 4) != 0)
 	{
 		free(file);
-		return ((ft_fprintf(2, "Error: Missing IHDR chunk\n") & 0));
+		return (ft_fprintf(2, "Error: Missing IHDR chunk\n") & 0);
 	}
 	dst->width = bytes_to_int(ihdr_chunk.data + 4);
 	ft_printf("Width: %d\n", dst->width);
