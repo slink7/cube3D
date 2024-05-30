@@ -6,7 +6,7 @@
 /*   By: ymostows <ymostows@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:42:56 by ymostows          #+#    #+#             */
-/*   Updated: 2024/05/29 14:50:44 by ymostows         ###   ########.fr       */
+/*   Updated: 2024/05/30 16:28:27 by ymostows         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,9 +101,7 @@ int mouse_move(int x, int y, t_data *data) {
     }
     delta_x = x - data->mouse->last_x;
     rotate_view(data, -delta_x * MOUSE_SENS);
-    data->mouse->last_x = x;
-    data->mouse->last_y = y;
-    //mlx_mouse_move(data->mlx_ptr, data->win_ptr, WIN_WIDTH / 2, WIN_HEIGHT / 2);
+    mlx_mouse_move(data->mlx_ptr, data->win_ptr, WIN_WIDTH / 2, WIN_HEIGHT / 2);
     return 0;
 }
 
@@ -207,11 +205,11 @@ void strafe_left(t_data *data)
 }
 int key_press(int keycode, t_data *data)
 {
-    if (keycode == 'z')
+    if (keycode == 'w')
         move_forward(data);
     if (keycode == 's')
         move_backward(data);
-    if (keycode == 'q')
+    if (keycode == 'a')
         strafe_left(data);
     if (keycode == 'd')
         strafe_right(data);
@@ -436,8 +434,7 @@ int main()
     mlx_hook(data.win_ptr, 2, 1L << 0, key_press, &data);
     mlx_hook(data.win_ptr, 6, 1L << 6, mouse_move, &data);
     mlx_loop_hook(data.mlx_ptr, &render_frame, &data);
-    /*mlx_mouse_move(data.mlx_ptr, data.win_ptr, WIN_WIDTH / 2, WIN_HEIGHT / 2);
-    mlx_mouse_hide(data.mlx_ptr, data.win_ptr);*/
+    mlx_mouse_hide(data.mlx_ptr, data.win_ptr);
     mlx_loop(data.mlx_ptr);
     return 0;
 }
