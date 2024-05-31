@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/08 22:19:20 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/24 12:55:54 by scambier         ###   ########.fr       */
+/*   Updated: 2024/05/31 09:43:47 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -131,7 +131,7 @@ int	load_png(t_image *dst, char *path)
 		{
 			inflate(0, 0, chunk.data + 4, chunk.length);
 		}
-		ft_pmem(chunk.data, chunk.length + 4);
+		//ft_pmem(chunk.data, chunk.length + 4);
 		file_index += chunk.length + 12;
 		read_chunk(&chunk, file + file_index, file_length - file_index);
 	}

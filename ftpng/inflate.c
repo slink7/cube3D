@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/10 04:50:42 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/30 00:55:53 by scambier         ###   ########.fr       */
+/*   Updated: 2024/05/31 11:18:49 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,6 +94,55 @@ void	assign_remaining_codes(t_uint32 *out, t_uint32 *first_codes, t_uint8 *code_
 			out[k] = first_codes[code_lengths[k]]++;
 }
 
+// uint32 sh_decode_huffman(sh_png_bit_stream *bits, uint32 *assigned_codes, uint8 *code_bit_lengths, uint32 assigned_code_length) {
+//     for(uint32 i = 0; i < assigned_code_length; ++i) {
+//         if(code_bit_lengths[i] == 0) continue;
+//         uint32 code = sh_peak_bits_reverse(bits, code_bit_lengths[i]);
+//         if(assigned_codes[i] == code) {
+//             bits->bit_buffer >>= code_bit_lengths[i];
+//             bits->bits_remaining -= code_bit_lengths[i];
+//             return i;
+//         }
+//     }
+
+//     return 0;
+// }
+
+t_uint32	decode_huffman(t_bit_stream *stream, t_uint32 *assigned_codes, t_uint8 *lengths, t_uint32 arrays_length)
+{
+	t_uint32	peek;
+	int			k;
+	
+	k = -1;
+	while (++k < arrays_length)
+	{
+		if (lengths[k] == 0)
+			continue ;
+		peek = peek_bits_reversed(stream, lengths[k]);
+		if (assigned_codes[k] == peek) {
+			stream->bit_buffer >>= lengths[k];
+			stream->bits_left -= lengths[k];
+			return (k);
+		}
+	}
+	return (0);
+}
+
+t_uint32	*build_huffman_codes(t_uint8 *code_lengths, t_uint32 length)
+{
+	t_uint32	max_code_length = find_max(code_lengths, length);
+	t_uint32	*counts = ft_calloc(max_code_length + 1, sizeof(t_uint32));
+	count_lengths(counts, code_lengths, 19);
+	counts[0] = 0;
+	t_uint32	*firsts_codes = ft_calloc(max_code_length + 1, sizeof(t_uint32));
+	assign_firsts_codes(firsts_codes, counts, max_code_length);
+	free(counts);
+	t_uint32	*assigned_codes = ft_calloc(length, sizeof(t_uint32));
+	assign_remaining_codes(assigned_codes, firsts_codes, code_lengths, length);
+	free(firsts_codes);
+	return (assigned_codes);
+}
+
 void	decompress_zblock(t_bit_stream *stream)
 {
 	t_uint32 is_last;
@@ -115,6 +164,8 @@ void	decompress_zblock(t_bit_stream *stream)
 		ft_printf("Dynamic huffman code\n");
 	else if (type == 3)
 		ft_printf("Error\n");
+	if (type != 2)
+		return ;
 	hlit = read_bits(stream, 5) + 257;
 	ft_printf("hlit: %d - 257\n", hlit);
 	hdist = read_bits(stream, 5) + 1;
@@ -130,31 +181,86 @@ void	decompress_zblock(t_bit_stream *stream)
 		code_lengths[reorder_indexes[i]] = read_bits(stream, 3);
 		ft_printf("i: %u = %x\n", reorder_indexes[i], code_lengths[reorder_indexes[i]]);
 	}
-	ft_printf("=================================\n");
-	for(int k = 0; k < hclen; k++)
-		ft_printf("%x\n", code_lengths[k]);
-	ft_printf("=================================\n");
+	// ft_printf("=================================\n");
+	// for(int k = 0; k < hclen; k++)
+	// 	ft_printf("%x\n", code_lengths[k]);
+	// ft_printf("=================================\n");
 
 	//Assignation des codes
-	t_uint32	max_code_length = find_max(code_lengths, 19);
-	//ft_printf("max_code_length : %u\n", max_code_length);
-	t_uint32	*counts = ft_calloc(max_code_length + 1, sizeof(t_uint32));
-	count_lengths(counts, code_lengths, 19);
-	counts[0] = 0;
-	t_uint32	*firsts_codes = ft_calloc(max_code_length + 1, sizeof(t_uint32));
-	assign_firsts_codes(firsts_codes, counts, max_code_length);
-	t_uint32	*assigned_codes = ft_calloc(19, sizeof(t_uint32));
-	assign_remaining_codes(assigned_codes, firsts_codes, code_lengths, 19);
-	free(firsts_codes);
-	free(counts);
-	
-	for(int k = 0; k < 19;k++)
-		ft_printf("%x\n", assigned_codes[k]);
-	ft_bindump((char *)assigned_codes, 4 * 19, 4);
+	t_uint32	*assigned_codes = build_huffman_codes(code_lengths, 19);
+
+	//Lecture des deux arbres (literal & repetitions)
+	t_uint8	*both_trees_codes = ft_calloc(hlit + hdist, sizeof(t_uint8));
+	t_uint32 code_index = 0;
+	while(code_index < (hdist+hlit))
+	{
+		t_uint32	decoded_value = decode_huffman(stream, assigned_codes, code_lengths, 19);
+		if (decoded_value < 16)
+		{
+			both_trees_codes[code_index++] = decoded_value;
+			continue ;
+		}
+		
+		t_uint32 repeat_count = 0;
+		t_uint8 repeat_value = 0;
+
+		if (decoded_value == 16)
+		{
+			repeat_count = read_bits(stream, 2) + 3;
+			repeat_value = both_trees_codes[code_index - 1];
+		}
+		else if (decoded_value = 17)
+		{
+			repeat_count = read_bits(stream, 3) + 3;
+		}
+		else if (decoded_value = 18)
+		{
+			repeat_count = read_bits(stream, 7) + 11;
+		}
+		ft_memset(both_trees_codes + code_index, repeat_value, repeat_count);
+		code_index += repeat_count;
+	}
+	free(assigned_codes);
+
+	//Construction des deux arbres de huffman
+	t_uint32 *literal_tree = build_huffman_codes(both_trees_codes, hlit);
+	t_uint32 *distance_tree = build_huffman_codes(both_trees_codes + hlit, hdist);
+
+	// for(int k = 0; k < 19;k++)
+	// 	ft_printf("%x\n", assigned_codes[k]);
+	// ft_bindump((char *)assigned_codes, 4 * 19, 4);
 
 	//Cleanup
-	free(assigned_codes);
+	free(distance_tree);
+	free(literal_tree);
 }
+
+/*
+uint32 decoded_value = sh_decode_huffman(bits, huffman_codes_of_tree_of_trees, code_length_of_code_length, 19);
+if(decoded_value < 16) {
+	two_trees_code_bit_lengths[code_index++] = decoded_value;
+	continue;
+}
+
+uint32 repeat_count = 0;
+uint8 code_length_to_repeat = 0; 
+
+switch(decoded_value) {
+	case 16:
+		repeat_count = sh_png_read_bits(bits, 2) + 3;// 3 - 6 repeat count
+		code_length_to_repeat = two_trees_code_bit_lengths[code_index - 1];
+		break;
+	case 17:
+		repeat_count = sh_png_read_bits(bits, 3) + 3;// 3 - 10 repeat count
+		break;
+	case 18:
+		repeat_count = sh_png_read_bits(bits, 7) + 11;// 3 - 10 repeat count
+		break;
+}
+
+sh_memset(two_trees_code_bit_lengths + code_index, code_length_to_repeat, repeat_count);
+code_index += repeat_count;
+*/
 
 int	inflate(t_uint8 *dst, t_uint32 dst_len, t_uint8 *src, t_uint32 src_len)
 {
