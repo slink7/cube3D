@@ -1,5 +1,7 @@
-#include <Windows.h>
+
 #include <stdint.h>
+#include <stdlib.h>
+#include "libft.h"
 
 typedef uint8_t uint8;
 typedef uint16_t uint16;
@@ -70,25 +72,25 @@ uint32 dist_extra_bits[] = {
 
 
 
-struct sh_png_chunk {
+typedef struct sh_png_chunk {
     uint32 data_length;
     uint8 type[4];
     uint8  *data;
     uint32 crc32;
-};
+}   sh_png_chunk;
 
-struct sh_zlib_block {
+typedef struct sh_zlib_block {
     uint8 cmf;
     uint8 extra_flags;
     uint8 *data;
     uint16 check_value;
-};
+}   sh_zlib_block;
 
-struct sh_png_bit_stream {
+typedef struct sh_png_bit_stream {
     uint8 *data_stream;
     uint32 bit_buffer;
     uint32 bits_remaining;
-};
+}   sh_png_bit_stream;
 
 enum sh_png_filters {
     sh_no_filter,
@@ -97,14 +99,6 @@ enum sh_png_filters {
     sh_avg_filter,
     sh_paeth_filter
 };
-
-uint8* sh_memalloc(uint32 bytes_to_allocate) {
-    return (uint8 *) HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, bytes_to_allocate);
-}
-
-uint8 sh_memfree(uint8 *mem_pointer) {
-    return HeapFree(GetProcessHeap(), 0, (LPVOID) mem_pointer);        
-}
 
 void sh_memcpy(uint8 *from, uint8 *to, uint32 bytes_to_copy) { //copy some bytes from "from" to "to" 
 
@@ -140,27 +134,6 @@ uint32 sh_get_uint32be(uint8 *mem) {
     return result;
 }
 
-
-uint8* sh_read_file(const char *file_name) {
-    uint8 *result = NULL;
-    HANDLE file = CreateFile(
-            (const char *)file_name,
-            GENERIC_READ,
-            FILE_SHARE_READ,
-            0,
-            OPEN_EXISTING,
-            FILE_ATTRIBUTE_NORMAL,
-            0
-            );
-
-    DWORD size = GetFileSize(file, 0);
-
-    result = sh_memalloc(size);
-    ReadFile(file, (void *) result, size, 0, 0);
-    CloseHandle(file);
-    return result;
-}
-
 sh_png_chunk sh_png_read_chunk(uint8 *mem) {
     sh_png_chunk chunk = {};
     chunk.data_length = sh_get_uint32be(mem);
@@ -169,7 +142,7 @@ sh_png_chunk sh_png_read_chunk(uint8 *mem) {
     *( (uint32 *)&chunk.type) = *((uint32 *) mem);
     SKIP_BYTES(mem, 4);
 
-    chunk.data = sh_memalloc(chunk.data_length);
+    chunk.data = malloc(chunk.data_length);
 
     sh_memcpy(mem, chunk.data, chunk.data_length);
     SKIP_BYTES(mem, chunk.data_length);
@@ -190,7 +163,7 @@ sh_zlib_block sh_read_zlib_block(uint8 *mem, uint32 length) {
     SKIP_BYTES(mem, 1);
 
     //Length is the sum of all the data, we consumed two bytes, and the last two bytes are for the check value
-    zlib_block.data = sh_memalloc(length - 2 - 2); //2 for cmf, and flag, 2 for check value
+    zlib_block.data = malloc(length - 2 - 2); //2 for cmf, and flag, 2 for check value
 
     //Remember we already skipped 2 bytes pointer wise, they were for the cmf and flag bytes
     sh_memcpy(mem, zlib_block.data, length - 2); 
@@ -316,20 +289,36 @@ void sh_assign_huffman_code(uint32 *assigned_codes, uint32 *first_codes, uint8 *
 
 uint32* sh_build_huffman_code(uint8 *code_bit_lengths, uint32 len_code_bit_lengths) {
     uint32 max_bit_length = sh_get_maximum_bit_length(code_bit_lengths, len_code_bit_lengths);
+    ft_printf("\tmax_len: %u\n", max_bit_length);
 
-    uint32 *code_counts = (uint32 *)sh_memalloc(sizeof(uint32)*( max_bit_length + 1 ));
-    uint32 *first_codes = (uint32 *)sh_memalloc(sizeof(uint32)*(max_bit_length + 1));
-    uint32 *assigned_codes = (uint32 *)sh_memalloc(sizeof(uint32)*(len_code_bit_lengths));//we have to assign code to every element in the alphabet, even if we have to assign zero
+    uint32 *code_counts = (uint32 *)malloc(sizeof(uint32)*( max_bit_length + 1 ));
+    uint32 *first_codes = (uint32 *)malloc(sizeof(uint32)*(max_bit_length + 1));
+    uint32 *assigned_codes = (uint32 *)malloc(sizeof(uint32)*(len_code_bit_lengths));//we have to assign code to every element in the alphabet, even if we have to assign zero
 
 
     sh_get_bit_length_count(code_counts,  code_bit_lengths, len_code_bit_lengths);
     code_counts[0] = 0; //in the real world, when a code of the alphabet has zero bit length, it means it doesn't occur in the data thus we have to reset the count for the zero bit length codes to 0.
+    ft_printf("\n\tCode counts: (%u)\n", max_bit_length + 1);
+    for (int k = 0; k < max_bit_length + 1; k++)
+        ft_printf("\t\t[%d] = %u\n", k, code_counts[k]);
 
     sh_first_code_for_bitlen(first_codes, code_counts, max_bit_length);
-    sh_assign_huffman_code(assigned_codes, first_codes, code_bit_lengths, len_code_bit_lengths);
+    ft_printf("\n\tFirst codes: (%u)\n", max_bit_length + 1);
+    for (int k = 0; k < max_bit_length + 1; k++)
+        ft_printf("\t\t[%d] = %u\n", k, first_codes[k]);
 
+    sh_assign_huffman_code(assigned_codes, first_codes, code_bit_lengths, len_code_bit_lengths);
+    ft_printf("\n\tAssigned codes: (%u)\n", len_code_bit_lengths);
+    for (int k = 0; k < len_code_bit_lengths; k++)
+        ft_printf("\t\t[%d] = %u\n", k, assigned_codes[k]);
     return assigned_codes;
 }
+
+// uint8 *decompressed_block = sh_zlib_deflate_block(
+//                 bits,
+//                 literal_length_huff_tree, two_trees_code_bit_lengths, hlit,
+//                 distance_huff_tree, two_trees_code_bit_lengths + hlit, hdist,
+//                 &block_size);
 
 uint8* sh_zlib_deflate_block(
         sh_png_bit_stream *bits,
@@ -343,9 +332,9 @@ uint8* sh_zlib_deflate_block(
     //each row has a filter byte(s) in the beginning that you have to account for
     //when you decompress
 
-    uint8 *decompressed_data = sh_memalloc(1024*1024);
+    uint8 *decompressed_data = malloc(1024*1024);
     uint32 data_index = 0;
-    while(true) {
+    while(1) {
         uint32 decoded_value = sh_decode_huffman(bits, literal_tree, lit_code_bit_len, lit_arr_len);
 
         if(decoded_value == 256) break;
@@ -371,10 +360,10 @@ uint8* sh_zlib_deflate_block(
     }
 
     *bytes_read = data_index;
-    uint8 *fit_image = sh_memalloc(data_index);
+    uint8 *fit_image = malloc(data_index);
     sh_memcpy(decompressed_data, fit_image, data_index);
 
-    sh_memfree(decompressed_data);
+    free(decompressed_data);
 
     return fit_image;
 }
@@ -382,7 +371,7 @@ uint8* sh_zlib_deflate_block(
 
 uint8* sh_zlib_decompress(uint8 *zlib_data, uint32 *decompressed_size) {
 
-    uint8 *decompressed_data = sh_memalloc(1024*1024*4); //4 MB free space
+    uint8 *decompressed_data = malloc(1024*1024*4); //4 MB free space
     uint32 data_read = 0;
     uint32 final;
     uint32 type;
@@ -404,8 +393,9 @@ uint8* sh_zlib_decompress(uint8 *zlib_data, uint32 *decompressed_size) {
             code_length_of_code_length[code_lengths_of_code_length_order[i]] = sh_png_read_bits(bits, 3);
         }
 
+        ft_printf("GLOBAL TREE\n");
         uint32 *huffman_codes_of_tree_of_trees = sh_build_huffman_code(code_length_of_code_length, 19);
-        uint8 *two_trees_code_bit_lengths = sh_memalloc(hlit + hdist);
+        uint8 *two_trees_code_bit_lengths = malloc(hlit + hdist);
 
         //because we have repetition, we won't necessarly have the exact bit lengths for each symbol if we just loop one increment at a time
         uint32 code_index = 0;
@@ -436,10 +426,15 @@ uint8* sh_zlib_decompress(uint8 *zlib_data, uint32 *decompressed_size) {
             code_index += repeat_count;
         }
 
+        ft_pmem(two_trees_code_bit_lengths, hlit + hdist);
+
+        ft_printf("LITERAL TREE\n");
         uint32 *literal_length_huff_tree = sh_build_huffman_code(two_trees_code_bit_lengths, hlit);
+        ft_printf("DISTANCE TREE\n");
         uint32 *distance_huff_tree = sh_build_huffman_code(two_trees_code_bit_lengths + hlit, hdist);
 
-
+        // for (int k = 0; k < hlit; k++)
+        //     ft_printf("ltree[%d] = %u\n", k, literal_length_huff_tree[k]);
 
         uint32 block_size = 0;
         uint8 *decompressed_block = sh_zlib_deflate_block(
@@ -450,7 +445,7 @@ uint8* sh_zlib_decompress(uint8 *zlib_data, uint32 *decompressed_size) {
         
         sh_memcpy(decompressed_block, decompressed_data + data_read, block_size);
         data_read += block_size;
-        sh_memfree(decompressed_block);
+        free(decompressed_block);
 
     } while(!final);
 
@@ -469,7 +464,7 @@ uint8* sh_png_defilter(uint8 *decompressed_image, uint32 size, sh_png_chunk *ihd
     uint8 *row = decompressed_image;
     uint32 stride = x*byte_per_pixel;
 
-    uint8 *image = sh_memalloc(x*y*byte_per_pixel); //this is even smaller than the filter but just being safe
+    uint8 *image = malloc(x*y*byte_per_pixel); //this is even smaller than the filter but just being safe
     uint8 *working = image;
     for(uint32 i = 0; i < y; ++i) {
         working = image + i*stride;
@@ -540,8 +535,10 @@ uint8* sh_png_defilter(uint8 *decompressed_image, uint32 size, sh_png_chunk *ihd
     return image;
 }
 
+
 int main(int argc, char **argv) {
-    uint8 *mem = sh_read_file("sh_font_0.png");
+    char *mem;
+    ft_get_file(&mem, "4.png", 64);
     SKIP_BYTES(mem, 8); //skip signature, you can read it and check for stuff
 
     sh_png_chunk chunks[3];
