@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/10 04:50:42 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/31 11:18:49 by scambier         ###   ########.fr       */
+/*   Updated: 2024/06/02 18:27:44 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -128,28 +128,114 @@ t_uint32	decode_huffman(t_bit_stream *stream, t_uint32 *assigned_codes, t_uint8 
 	return (0);
 }
 
+// uint32* sh_build_huffman_code(uint8 *code_bit_lengths, uint32 len_code_bit_lengths) {
+//     uint32 max_bit_length = sh_get_maximum_bit_length(code_bit_lengths, len_code_bit_lengths);
+
+//     uint32 *code_counts = (uint32 *)malloc(sizeof(uint32)*( max_bit_length + 1 ));
+//     uint32 *first_codes = (uint32 *)malloc(sizeof(uint32)*(max_bit_length + 1));
+//     uint32 *assigned_codes = (uint32 *)malloc(sizeof(uint32)*(len_code_bit_lengths));//we have to assign code to every element in the alphabet, even if we have to assign zero
+
+
+//     sh_get_bit_length_count(code_counts,  code_bit_lengths, len_code_bit_lengths);
+//     code_counts[0] = 0; //in the real world, when a code of the alphabet has zero bit length, it means it doesn't occur in the data thus we have to reset the count for the zero bit length codes to 0.
+
+//     sh_first_code_for_bitlen(first_codes, code_counts, max_bit_length);
+//     sh_assign_huffman_code(assigned_codes, first_codes, code_bit_lengths, len_code_bit_lengths);
+
+//     return assigned_codes;
+// }
+
 t_uint32	*build_huffman_codes(t_uint8 *code_lengths, t_uint32 length)
 {
 	t_uint32	max_code_length = find_max(code_lengths, length);
 	t_uint32	*counts = ft_calloc(max_code_length + 1, sizeof(t_uint32));
+	t_uint32	*firsts_codes = ft_calloc(max_code_length + 1, sizeof(t_uint32));
+	t_uint32	*assigned_codes = ft_calloc(length, sizeof(t_uint32));
+
 	count_lengths(counts, code_lengths, 19);
 	counts[0] = 0;
-	t_uint32	*firsts_codes = ft_calloc(max_code_length + 1, sizeof(t_uint32));
+	ft_printf("\n\tCode counts: (%u)\n", max_code_length + 1);
+    for (int k = 0; k < max_code_length + 1; k++)
+        ft_printf("\t\t[%d] = %u\n", k, counts[k]);
+
 	assign_firsts_codes(firsts_codes, counts, max_code_length);
 	free(counts);
-	t_uint32	*assigned_codes = ft_calloc(length, sizeof(t_uint32));
+	ft_printf("\n\tFirst codes: (%u)\n", max_code_length + 1);
+    for (int k = 0; k < max_code_length + 1; k++)
+        ft_printf("\t\t[%d] = %u\n", k, firsts_codes[k]);
+	
 	assign_remaining_codes(assigned_codes, firsts_codes, code_lengths, length);
 	free(firsts_codes);
+	ft_printf("\n\tAssigned codes: (%u)\n", length);
+    for (int k = 0; k < length; k++)
+        ft_printf("\t\t[%d] = %u\n", k, assigned_codes[k]);
+		
 	return (assigned_codes);
 }
+
+t_uint8 base_length_extra_bit[] = {
+    0, 0, 0, 0, 0, 0, 0, 0, //257 - 264
+    1, 1, 1, 1, //265 - 268
+    2, 2, 2, 2, //269 - 273 
+    3, 3, 3, 3, //274 - 276
+    4, 4, 4, 4, //278 - 280
+    5, 5, 5, 5, //281 - 284
+    0           //285
+};
+
+t_uint32 base_lengths[] = {
+    3, 4, 5, 6, 7, 8, 9, 10, //257 - 264
+    11, 13, 15, 17,          //265 - 268
+    19, 23, 27, 31,          //269 - 273 
+    35, 43, 51, 59,          //274 - 276
+    67, 83, 99, 115,         //278 - 280
+    131, 163, 195, 227,      //281 - 284
+    258                      //285
+};
+
+t_uint32 dist_bases[] = {
+    /*0*/ 1, 2, 3, 4,    //0-3
+    /*1*/ 5, 7,          //4-5
+    /*2*/ 9, 13,         //6-7
+    /*3*/ 17, 25,        //8-9
+    /*4*/ 33, 49,        //10-11
+    /*5*/ 65, 97,        //12-13
+    /*6*/ 129, 193,      //14-15
+    /*7*/ 257, 385,      //16-17
+    /*8*/ 513, 769,      //18-19
+    /*9*/ 1025, 1537,    //20-21
+    /*10*/ 2049, 3073,   //22-23
+    /*11*/ 4097, 6145,   //24-25
+    /*12*/ 8193, 12289,  //26-27
+    /*13*/ 16385, 24577, //28-29
+             0   , 0      //30-31, error, shouldn't occur
+};
+
+t_uint32 dist_extra_bits[] = {
+    /*0*/ 0, 0, 0, 0, //0-3
+    /*1*/ 1, 1,       //4-5
+    /*2*/ 2, 2,       //6-7
+    /*3*/ 3, 3,       //8-9
+    /*4*/ 4, 4,       //10-11
+    /*5*/ 5, 5,       //12-13
+    /*6*/ 6, 6,       //14-15
+    /*7*/ 7, 7,       //16-17
+    /*8*/ 8, 8,       //18-19
+    /*9*/ 9, 9,       //20-21
+    /*10*/ 10, 10,    //22-23
+    /*11*/ 11, 11,    //24-25
+    /*12*/ 12, 12,    //26-27
+    /*13*/ 13, 13,     //28-29
+            0 , 0      //30-31 error, they shouldn't occur
+};
 
 void	decompress_zblock(t_bit_stream *stream)
 {
 	t_uint32 is_last;
 	t_uint32 type;
-	t_uint32 hlit;
-	t_uint32 hdist;
-	t_uint32 hclen;
+	t_uint32 hlit; //Huffman literals (len)
+	t_uint32 hdist; //Huffman distances (len)
+	t_uint32 hclen; //Huffman codes len (len)
 
 	//Lecture du header du block
 	is_last = read_bits(stream, 1);
@@ -177,19 +263,15 @@ void	decompress_zblock(t_bit_stream *stream)
 	t_uint8 reorder_indexes[] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
 	t_uint8 code_lengths[19]; //Longeure des 19 codes
 	ft_memset(code_lengths, 0, 19);
-	for(t_uint8 i = 0; i < hclen; ++i) {
+	for(t_uint8 i = 0; i < hclen; ++i)
 		code_lengths[reorder_indexes[i]] = read_bits(stream, 3);
-		ft_printf("i: %u = %x\n", reorder_indexes[i], code_lengths[reorder_indexes[i]]);
-	}
-	// ft_printf("=================================\n");
-	// for(int k = 0; k < hclen; k++)
-	// 	ft_printf("%x\n", code_lengths[k]);
-	// ft_printf("=================================\n");
 
 	//Assignation des codes
+	ft_printf("GLOBAL TREE\n");
 	t_uint32	*assigned_codes = build_huffman_codes(code_lengths, 19);
 
 	//Lecture des deux arbres (literal & repetitions)
+	ft_printf("Reading global tree\n");
 	t_uint8	*both_trees_codes = ft_calloc(hlit + hdist, sizeof(t_uint8));
 	t_uint32 code_index = 0;
 	while(code_index < (hdist+hlit))
@@ -222,13 +304,56 @@ void	decompress_zblock(t_bit_stream *stream)
 	}
 	free(assigned_codes);
 
+	ft_pmem(both_trees_codes, hlit + hdist);
+
 	//Construction des deux arbres de huffman
+	ft_printf("Assigning codes\n");
+	ft_printf("LITERAL TREE\n");
 	t_uint32 *literal_tree = build_huffman_codes(both_trees_codes, hlit);
+	ft_printf("DISTANCE TREE\n");
 	t_uint32 *distance_tree = build_huffman_codes(both_trees_codes + hlit, hdist);
 
-	// for(int k = 0; k < 19;k++)
-	// 	ft_printf("%x\n", assigned_codes[k]);
-	// ft_bindump((char *)assigned_codes, 4 * 19, 4);
+	// for (int k = 0; k < hlit; k++)
+	// 	ft_printf("ltree[%u] = %u\n", k, literal_tree[k]);
+
+	//Decompression de la data, en utilisant des deux arbres pour LZ77
+	ft_printf("Reading LZ77\n");
+	t_uint8	buffer[1024 * 1024];
+	t_uint32	index;
+	t_uint32	value;
+
+	index = 0;
+	while (1 && index < 256)
+	{
+		value = decode_huffman(stream, literal_tree, both_trees_codes, hlit);
+		// ft_printf("Decoded : %u\n", value);
+		if (value == 256)
+			break ;
+		else if (value < 256)
+			buffer[index++] = value;
+		else if (value < 286)
+		{
+			t_uint32	base_index = value - 257;
+			t_uint32	duplicate_length = base_lengths[base_index] + read_bits(stream, base_length_extra_bit[base_index]);;
+
+			t_uint32	distance_index = decode_huffman(stream, distance_tree, both_trees_codes + hlit, hdist);
+            t_uint32	distance_length = dist_bases[distance_index] + read_bits(stream, dist_extra_bits[distance_index]);
+			
+			t_uint32 back_pointer_index = index - distance_length;
+            while(duplicate_length--) {
+                buffer[index++] = buffer[back_pointer_index++];
+            }
+		}
+		else
+			ft_printf("Macarena >= 286\n");
+	}
+
+	//Copy
+	ft_printf("Copying result\n");
+	t_uint8	*out = ft_calloc(index, sizeof(t_uint8));
+	ft_memcpy(out, buffer, index);
+
+	// ft_hexdump(out, index, 4);
 
 	//Cleanup
 	free(distance_tree);
