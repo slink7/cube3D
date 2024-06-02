@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/10 04:50:42 by scambier          #+#    #+#             */
-/*   Updated: 2024/06/02 19:00:44 by scambier         ###   ########.fr       */
+/*   Updated: 2024/06/02 22:45:38 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -309,7 +309,7 @@ void	decompress_zblock(t_bit_stream *stream)
 	t_uint32	value;
 
 	index = 0;
-	while (1 && index < 256)
+	while (1)
 	{
 		value = decode_huffman(stream, literal_tree, both_trees_codes, hlit);
 		// ft_printf("Decoded : %u\n", value);
