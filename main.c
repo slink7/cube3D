@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:34:12 by scambier          #+#    #+#             */
-/*   Updated: 2024/06/03 18:11:53 by scambier         ###   ########.fr       */
+/*   Updated: 2024/06/03 19:05:29 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,93 +58,24 @@ t_uint32	bytes_to_int2(t_uint8 *bytes)
 		+ (0x000000FF & bytes[3] << 0));
 }
 
-void	png_to_data(t_data *out, t_png *in)
+t_uint32	byteto4bytes(t_uint8 *bytes)
 {
-	for (int k = 0; k < in->data_len; k++)
-	{
-		my_mlx_pixel_put(out, k % in->width, k / in->width, bytes_to_int2(in->data + k));
-	}
+	return (
+		(0xFF000000 & bytes[0] << 24)
+		+ (0x00FF0000 & bytes[0] << 16)
+		+ (0x0000FF00 & bytes[0] << 8)
+		+ (0x000000FF & bytes[0] << 0)
+	);
 }
 
-// uint8* sh_png_defilter(uint8 *decompressed_image, uint32 size, sh_png_chunk *ihdr) {
-//     uint32 x = sh_get_uint32be(ihdr->data);
-//     uint32 y = sh_get_uint32be(ihdr->data+4);
-//     uint8 bit_depth = *( ihdr->data + 4 + 4 );//count the bytes out
-//     uint8 byte_per_pixel = 1;//this is usually determined by checking color type, the picture I'm using is only greyscale, its only one byte per pixel
-
-//     uint8 *row = decompressed_image;
-//     uint32 stride = x*byte_per_pixel;
-
-//     uint8 *image = malloc(x*y*byte_per_pixel); //this is even smaller than the filter but just being safe
-//     uint8 *working = image;
-//     for(uint32 i = 0; i < y; ++i) {
-//         working = image + i*stride;
-//         uint8 filter = *row++;
-
-//         switch(filter) {
-//             case sh_no_filter: {
-//                 for(uint32 j = 0; j < x; ++j) {
-//                     working[j] = row[j];
-//                 }
-//             } break;
-
-//             case sh_sub_filter: {
-//                 for(uint32 j = 0; j < x; ++j) {
-//                     uint8 a = 0;
-//                     if(j != 0) {
-//                         a = working[j-1];
-//                     }
-//                     uint8 value = row[j] + a;
-//                     working[j] = value;
-//                 }
-//             } break;
-
-//             case sh_up_filter: {
-//                 uint8 *prev_row = working - stride;
-//                 for(uint32 j = 0; j < x; ++j) {
-//                     uint8 b = prev_row[j];
-//                     uint8 value = row[j] + b;
-//                     working[j] = value;
-//                 }
-//            } break;
-
-//             case sh_avg_filter: {
-//                 uint8 *prev_row = working - stride;
-//                 for(uint32 j = 0; j < x; ++j) {
-//                     uint8 a = 0;
-//                     uint8 b = prev_row[j];
-//                     if(j) {
-//                         a = working[j - 1];
-//                     }
-
-//                     uint8 value = row[j] + ( (a + b) >> 1 );
-//                     working[j] = value;
-//                 }
-//             } break;
-
-//             case sh_paeth_filter: {
-//                 uint8 *prev_row = working - stride;
-//                 for(uint32 j = 0; j < x; ++j) {
-//                     uint8 a = 0;
-//                     uint8 b = prev_row[j];
-//                     uint8 c = 0;
-//                     if(j) { 
-//                         a = working[j - 1];
-//                         c = prev_row[j - 1];
-//                     }
-
-//                     uint8 value = row[j] + sh_png_paeth_predict((int32) a, (int32) b, (int32) c);
-//                     working[j] = value;
-//                 }
-//             } break;
-
-//         }
-
-//         row += stride;
-//     }
-
-//     return image;
-// }
+void	png_to_data(t_data *out, t_png *in)
+{
+	
+	for (int k = 0; k < in->data_len; k++)
+	{
+		my_mlx_pixel_put(out, k % in->width, k / in->width, byteto4bytes(in->data + k));
+	}
+}
 
 enum sh_png_filters {
     sh_no_filter,
