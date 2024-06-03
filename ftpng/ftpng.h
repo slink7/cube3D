@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/14 13:52:17 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/24 12:58:06 by scambier         ###   ########.fr       */
+/*   Updated: 2024/06/03 16:44:39 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,8 +22,21 @@ typedef struct s_bit_stream {
 	t_uint32	bits_left;
 }	t_bit_stream;
 
-int			load_png(t_image *dst, char *path);
-int			inflate(t_uint8 *dst, t_uint32 dst_len, t_uint8 *src, t_uint32 src_len);
+typedef struct s_png
+{
+	int			width;
+	int			height;
+	int			bit_depth;
+	int			color_type;
+	int			compression_method;
+	int			filter_method;
+	int			interlaced;
+	t_uint8		*data;
+	t_uint32	data_len;
+}	t_png;
+
+int			load_png(t_png *dst, char *path);
+t_uint32	inflate(t_uint8 **dst, t_uint8 *src, t_uint32 src_len);
 
 void		get_bits(t_bit_stream *stream, t_uint32 bits_req);
 t_uint32	read_bits(t_bit_stream *stream, t_uint32 bits_to_read);

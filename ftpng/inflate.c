@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/10 04:50:42 by scambier          #+#    #+#             */
-/*   Updated: 2024/06/03 15:38:00 by scambier         ###   ########.fr       */
+/*   Updated: 2024/06/03 16:45:31 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -185,7 +185,7 @@ t_uint32 dist_extra_bits[] = {
 
 
 
-void	decompress_zblock(t_bit_stream *stream)
+t_uint32	decompress_zblock(t_uint8 **out, t_bit_stream *stream)
 {
 	t_uint32 is_last;
 	t_uint32 type;
@@ -207,7 +207,7 @@ void	decompress_zblock(t_bit_stream *stream)
 	else if (type == 3)
 		ft_printf("Error\n");
 	if (type != 2)
-		return ;
+		return (0);
 	hlit = read_bits(stream, 5) + 257;
 	ft_printf("hlit: %d - 257\n", hlit);
 	hdist = read_bits(stream, 5) + 1;
@@ -249,13 +249,9 @@ void	decompress_zblock(t_bit_stream *stream)
 			repeat_value = both_trees_codes[code_index - 1];
 		}
 		else if (decoded_value = 17)
-		{
 			repeat_count = read_bits(stream, 3) + 3;
-		}
 		else if (decoded_value = 18)
-		{
 			repeat_count = read_bits(stream, 7) + 11;
-		}
 		ft_memset(both_trees_codes + code_index, repeat_value, repeat_count);
 		code_index += repeat_count;
 	}
@@ -268,7 +264,7 @@ void	decompress_zblock(t_bit_stream *stream)
 	init_huffcodes(&huff_distances, both_trees_codes + hlit, hdist);
 
 	//Decompression de la data, en utilisant des deux arbres pour LZ77
-	t_uint8	buffer[1024 * 1024];
+	t_uint8		buffer[1024 * 1024];
 	t_uint32	index;
 	t_uint32	value;
 
@@ -299,20 +295,21 @@ void	decompress_zblock(t_bit_stream *stream)
 	}
 
 	//Copy
-	t_uint8	*out = ft_calloc(index, sizeof(t_uint8));
-	ft_memcpy(out, buffer, index);
+	*out = ft_calloc(index, sizeof(t_uint8));
+	ft_memcpy(*out, buffer, index);
 
-	ft_pmem(out, index);
-	ft_printf("Read %u bytes\n", index);
+	// ft_pmem(*out, index);
+	// ft_printf("Read %u bytes\n", index);
 
 	// ft_hexdump(out, index, 4);
 
 	//Cleanup
 	deinit_huffcodes(&huff_literals);
 	deinit_huffcodes(&huff_distances);
+	return (index);
 }
 
-int	inflate(t_uint8 *dst, t_uint32 dst_len, t_uint8 *src, t_uint32 src_len)
+t_uint32	inflate(t_uint8 **dst, t_uint8 *src, t_uint32 src_len)
 {
 	t_uint8			cmf;
 	t_uint8			flags;
@@ -328,7 +325,7 @@ int	inflate(t_uint8 *dst, t_uint32 dst_len, t_uint8 *src, t_uint32 src_len)
 	check_value = src[src_len - 2] << 1 | src[src_len - 1];
 
 	
-	decompress_zblock(&stream);
+	return (decompress_zblock(dst, &stream));
 
 	
 	return (1);

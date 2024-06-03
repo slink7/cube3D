@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/08 22:19:20 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/31 09:43:47 by scambier         ###   ########.fr       */
+/*   Updated: 2024/06/03 16:45:46 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,7 +75,7 @@ int	read_chunk(t_png_chunk *dst, t_uint8 *data, t_uint32 len)
 	return (1);
 }
 
-int	load_png(t_image *dst, char *path)
+int	load_png(t_png *dst, char *path)
 {
 	t_uint8		*file;
 	t_uint32	file_length;
@@ -104,24 +104,22 @@ int	load_png(t_image *dst, char *path)
 		return (ft_fprintf(2, "Error: Missing IHDR chunk\n") & 0);
 	}
 	dst->width = bytes_to_int(ihdr_chunk.data + 4);
-	ft_printf("Width: %d\n", dst->width);
 	dst->height = bytes_to_int(ihdr_chunk.data + 8);
-	ft_printf("Height: %d\n", dst->height);
-	ft_printf("Bit depth: %d\n", ihdr_chunk.data[12]);
-	ft_printf("Color type: %d\n", ihdr_chunk.data[13]);
-	ft_printf("Compression method: %d\n", ihdr_chunk.data[14]);
-	if (ihdr_chunk.data[14] != 0)
+	dst->bit_depth = ihdr_chunk.data[12];
+	dst->color_type = ihdr_chunk.data[13];
+	dst->compression_method = ihdr_chunk.data[14];
+	if (dst->compression_method != 0)
 	{
 		free(file);
 		return ((ft_fprintf(2, "Error: Unsupported compression method\n") & 0));
 	}
-	ft_printf("Filter method: %d\n", ihdr_chunk.data[15]);
-	if (ihdr_chunk.data[15] != 0)
+	dst->filter_method = ihdr_chunk.data[15];
+	if (dst->filter_method != 0)
 	{
 		free(file);
 		return ((ft_fprintf(2, "Error: Unsupported filter method\n") & 0));
 	}
-	ft_printf("Interlaced: %d\n", ihdr_chunk.data[16]);
+	dst->interlaced = ihdr_chunk.data[16];
 
 	file_index = 33;
 	read_chunk(&chunk, file + file_index, file_length - file_index);
@@ -129,7 +127,7 @@ int	load_png(t_image *dst, char *path)
 	{
 		if (ft_memcmp(chunk.data, "IDAT", 4) == 0)
 		{
-			inflate(0, 0, chunk.data + 4, chunk.length);
+			dst->data_len = inflate(&dst->data, chunk.data + 4, chunk.length);
 		}
 		//ft_pmem(chunk.data, chunk.length + 4);
 		file_index += chunk.length + 12;
