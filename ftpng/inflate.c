@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/10 04:50:42 by scambier          #+#    #+#             */
-/*   Updated: 2024/06/03 14:45:07 by scambier         ###   ########.fr       */
+/*   Updated: 2024/06/03 15:38:00 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,44 +59,72 @@ void	assign_remaining_codes(t_uint32 *out, t_uint32 *first_codes, t_uint8 *code_
 			out[k] = first_codes[code_lengths[k]]++;
 }
 
-t_uint32	decode_huffman(t_bit_stream *stream, t_uint32 *assigned_codes, t_uint8 *lengths, t_uint32 arrays_length)
+typedef struct s_huffcodes {
+			t_uint32	*codes;
+			t_uint8		*codes_length;
+			t_uint32	count;
+		}	t_huffcodes;
+
+int	build_huffman_codes(t_huffcodes *codes)
+{
+	t_uint32	max_code_length = find_max(codes->codes_length, codes->count);
+	t_uint32	*counts = ft_calloc(max_code_length + 1, sizeof(t_uint32));
+	if (!counts)
+		return (0);
+	t_uint32	*firsts_codes = ft_calloc(max_code_length + 1, sizeof(t_uint32));
+
+	count_lengths(counts, codes->codes_length, codes->count);
+	counts[0] = 0;
+
+	assign_firsts_codes(firsts_codes, counts, max_code_length);
+	free(counts);
+	
+	assign_remaining_codes(codes->codes, firsts_codes, codes->codes_length, codes->count);
+	free(firsts_codes);
+		
+	return (1);
+}
+
+		
+
+		int		init_huffcodes(t_huffcodes *codes, t_uint8 *codes_length, t_uint32 count)
+		{
+			codes->count = count;
+			codes->codes_length = ft_memdup(codes_length, count);
+			codes->codes = ft_calloc(count, sizeof(t_uint32));
+			if (!codes->codes)
+				return (0);
+			build_huffman_codes(codes);
+			return (1);
+		}
+
+		void	deinit_huffcodes(t_huffcodes *codes)
+		{
+			free(codes->codes);
+			free(codes->codes_length);
+		}
+
+t_uint32	decode_huffman(t_bit_stream *stream, t_huffcodes *codes)
 {
 	t_uint32	peek;
 	int			k;
 	
 	k = -1;
-	while (++k < arrays_length)
+	while (++k < codes->count)
 	{
-		if (lengths[k] == 0)
+		if (codes->codes_length[k] == 0)
 			continue ;
-		peek = peek_bits_reversed(stream, lengths[k]);
-		if (assigned_codes[k] == peek) {
-			stream->bit_buffer >>= lengths[k];
-			stream->bits_left -= lengths[k];
+		peek = peek_bits_reversed(stream, codes->codes_length[k]);
+		if (codes->codes[k] == peek) {
+			stream->bit_buffer >>= codes->codes_length[k];
+			stream->bits_left -= codes->codes_length[k];
 			return (k);
 		}
 	}
 	return (0);
 }
 
-t_uint32	*build_huffman_codes(t_uint8 *code_lengths, t_uint32 length)
-{
-	t_uint32	max_code_length = find_max(code_lengths, length);
-	t_uint32	*counts = ft_calloc(max_code_length + 1, sizeof(t_uint32));
-	t_uint32	*firsts_codes = ft_calloc(max_code_length + 1, sizeof(t_uint32));
-	t_uint32	*assigned_codes = ft_calloc(length, sizeof(t_uint32));
 
-	count_lengths(counts, code_lengths, length);
-	counts[0] = 0;
-
-	assign_firsts_codes(firsts_codes, counts, max_code_length);
-	free(counts);
-	
-	assign_remaining_codes(assigned_codes, firsts_codes, code_lengths, length);
-	free(firsts_codes);
-		
-	return (assigned_codes);
-}
 
 t_uint8 base_length_extra_bit[] = {
     0, 0, 0, 0, 0, 0, 0, 0, //257 - 264
@@ -154,6 +182,9 @@ t_uint32 dist_extra_bits[] = {
             0 , 0      //30-31 error, they shouldn't occur
 };
 
+
+
+
 void	decompress_zblock(t_bit_stream *stream)
 {
 	t_uint32 is_last;
@@ -186,20 +217,23 @@ void	decompress_zblock(t_bit_stream *stream)
 
 	//Lecture des longueur des codes
 	t_uint8 reorder_indexes[] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
-	t_uint8 code_lengths[19]; //Longeure des 19 codes
-	ft_memset(code_lengths, 0, 19);
+	t_uint8	*codes_length = ft_calloc(19, sizeof(t_uint8));
+	t_huffcodes	base_codes;
 	for(t_uint8 i = 0; i < hclen; ++i)
-		code_lengths[reorder_indexes[i]] = read_bits(stream, 3);
+		codes_length[reorder_indexes[i]] = read_bits(stream, 3);
+	init_huffcodes(&base_codes, codes_length, 19);
+	free(codes_length);
 
 	//Assignation des codes
-	t_uint32	*assigned_codes = build_huffman_codes(code_lengths, 19);
+
+
 
 	//Lecture des deux arbres (literal & repetitions)
 	t_uint8	*both_trees_codes = ft_calloc(hlit + hdist, sizeof(t_uint8));
 	t_uint32 code_index = 0;
 	while(code_index < (hdist+hlit))
 	{
-		t_uint32	decoded_value = decode_huffman(stream, assigned_codes, code_lengths, 19);
+		t_uint32	decoded_value = decode_huffman(stream, &base_codes);
 		if (decoded_value < 16)
 		{
 			both_trees_codes[code_index++] = decoded_value;
@@ -225,11 +259,13 @@ void	decompress_zblock(t_bit_stream *stream)
 		ft_memset(both_trees_codes + code_index, repeat_value, repeat_count);
 		code_index += repeat_count;
 	}
-	free(assigned_codes);
+	deinit_huffcodes(&base_codes);
 
-	//Construction des deux arbres de huffman
-	t_uint32 *literal_tree = build_huffman_codes(both_trees_codes, hlit);
-	t_uint32 *distance_tree = build_huffman_codes(both_trees_codes + hlit, hdist);
+	t_huffcodes	huff_literals;
+	t_huffcodes	huff_distances;
+
+	init_huffcodes(&huff_literals, both_trees_codes, hlit);
+	init_huffcodes(&huff_distances, both_trees_codes + hlit, hdist);
 
 	//Decompression de la data, en utilisant des deux arbres pour LZ77
 	t_uint8	buffer[1024 * 1024];
@@ -239,7 +275,7 @@ void	decompress_zblock(t_bit_stream *stream)
 	index = 0;
 	while (1)
 	{
-		value = decode_huffman(stream, literal_tree, both_trees_codes, hlit);
+		value = decode_huffman(stream, &huff_literals);
 		// ft_printf("Decoded : %u\n", value);
 		if (value == 256)
 			break ;
@@ -250,7 +286,7 @@ void	decompress_zblock(t_bit_stream *stream)
 			t_uint32	base_index = value - 257;
 			t_uint32	duplicate_length = base_lengths[base_index] + read_bits(stream, base_length_extra_bit[base_index]);;
 
-			t_uint32	distance_index = decode_huffman(stream, distance_tree, both_trees_codes + hlit, hdist);
+			t_uint32	distance_index = decode_huffman(stream, &huff_distances);
             t_uint32	distance_length = dist_bases[distance_index] + read_bits(stream, dist_extra_bits[distance_index]);
 			
 			t_uint32 back_pointer_index = index - distance_length;
@@ -272,8 +308,8 @@ void	decompress_zblock(t_bit_stream *stream)
 	// ft_hexdump(out, index, 4);
 
 	//Cleanup
-	free(distance_tree);
-	free(literal_tree);
+	deinit_huffcodes(&huff_literals);
+	deinit_huffcodes(&huff_distances);
 }
 
 int	inflate(t_uint8 *dst, t_uint32 dst_len, t_uint8 *src, t_uint32 src_len)
