@@ -289,28 +289,23 @@ void sh_assign_huffman_code(uint32 *assigned_codes, uint32 *first_codes, uint8 *
 
 uint32* sh_build_huffman_code(uint8 *code_bit_lengths, uint32 len_code_bit_lengths) {
     uint32 max_bit_length = sh_get_maximum_bit_length(code_bit_lengths, len_code_bit_lengths);
-    ft_printf("\tmax_len: %u\n", max_bit_length);
 
     uint32 *code_counts = (uint32 *)malloc(sizeof(uint32)*( max_bit_length + 1 ));
+    memset(code_counts, 0, max_bit_length + 1);
     uint32 *first_codes = (uint32 *)malloc(sizeof(uint32)*(max_bit_length + 1));
+    memset(first_codes, 0, max_bit_length + 1);
     uint32 *assigned_codes = (uint32 *)malloc(sizeof(uint32)*(len_code_bit_lengths));//we have to assign code to every element in the alphabet, even if we have to assign zero
+    memset(assigned_codes, 0, len_code_bit_lengths);
 
 
     sh_get_bit_length_count(code_counts,  code_bit_lengths, len_code_bit_lengths);
     code_counts[0] = 0; //in the real world, when a code of the alphabet has zero bit length, it means it doesn't occur in the data thus we have to reset the count for the zero bit length codes to 0.
-    ft_printf("\n\tCode counts: (%u)\n", max_bit_length + 1);
-    for (int k = 0; k < max_bit_length + 1; k++)
-        ft_printf("\t\t[%d] = %u\n", k, code_counts[k]);
+
 
     sh_first_code_for_bitlen(first_codes, code_counts, max_bit_length);
-    ft_printf("\n\tFirst codes: (%u)\n", max_bit_length + 1);
-    for (int k = 0; k < max_bit_length + 1; k++)
-        ft_printf("\t\t[%d] = %u\n", k, first_codes[k]);
 
     sh_assign_huffman_code(assigned_codes, first_codes, code_bit_lengths, len_code_bit_lengths);
-    ft_printf("\n\tAssigned codes: (%u)\n", len_code_bit_lengths);
-    for (int k = 0; k < len_code_bit_lengths; k++)
-        ft_printf("\t\t[%d] = %u\n", k, assigned_codes[k]);
+    
     return assigned_codes;
 }
 
@@ -393,7 +388,6 @@ uint8* sh_zlib_decompress(uint8 *zlib_data, uint32 *decompressed_size) {
             code_length_of_code_length[code_lengths_of_code_length_order[i]] = sh_png_read_bits(bits, 3);
         }
 
-        ft_printf("GLOBAL TREE\n");
         uint32 *huffman_codes_of_tree_of_trees = sh_build_huffman_code(code_length_of_code_length, 19);
         uint8 *two_trees_code_bit_lengths = malloc(hlit + hdist);
 
@@ -426,11 +420,9 @@ uint8* sh_zlib_decompress(uint8 *zlib_data, uint32 *decompressed_size) {
             code_index += repeat_count;
         }
 
-        ft_pmem(two_trees_code_bit_lengths, hlit + hdist);
+        //ft_pmem(two_trees_code_bit_lengths, hlit + hdist);
 
-        ft_printf("LITERAL TREE\n");
         uint32 *literal_length_huff_tree = sh_build_huffman_code(two_trees_code_bit_lengths, hlit);
-        ft_printf("DISTANCE TREE\n");
         uint32 *distance_huff_tree = sh_build_huffman_code(two_trees_code_bit_lengths + hlit, hdist);
 
         // for (int k = 0; k < hlit; k++)
@@ -442,7 +434,7 @@ uint8* sh_zlib_decompress(uint8 *zlib_data, uint32 *decompressed_size) {
                 literal_length_huff_tree, two_trees_code_bit_lengths, hlit,
                 distance_huff_tree, two_trees_code_bit_lengths + hlit, hdist,
                 &block_size);
-        
+
         sh_memcpy(decompressed_block, decompressed_data + data_read, block_size);
         data_read += block_size;
         free(decompressed_block);
@@ -450,7 +442,9 @@ uint8* sh_zlib_decompress(uint8 *zlib_data, uint32 *decompressed_size) {
     } while(!final);
 
     *decompressed_size = data_read;
-
+    
+    ft_pmem(decompressed_data, data_read);
+    ft_printf("Read %u bytes\n", data_read);
     return decompressed_data;
 }
 
