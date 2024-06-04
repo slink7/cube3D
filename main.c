@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:34:12 by scambier          #+#    #+#             */
-/*   Updated: 2024/06/04 14:38:19 by scambier         ###   ########.fr       */
+/*   Updated: 2024/06/04 14:41:40 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,119 +75,6 @@ void	png_to_data(t_data *out, t_png *in)
 	{
 		my_mlx_pixel_put(out, k % in->width, k / in->width, byteto4bytes(in->data + k));
 	}
-}
-
-enum sh_png_filters {
-    sh_no_filter,
-    sh_sub_filter,
-    sh_up_filter,
-    sh_avg_filter,
-    sh_paeth_filter
-};
-
-int sh_png_paeth_predict(int a, int b, int c) { 
-    int p = a + b - c;
-    int pa = ft_abs(p - a);
-    int pb = ft_abs(p - b);
-    int pc = ft_abs(p - c);
-
-    if(pa <= pb && pa <= pc) return a;
-    if(pb <= pc) return b;
-    return c;
-}
-
-static void defilter_none(t_uint8 *dst, t_uint8 *src, int width, int bpr)
-{
-	(void) width;
-	ft_memcpy(dst, src, bpr);
-}
-
-static void	defilter_sub(t_uint8 *dst, t_uint8 *src, int width, int bpr)
-{
-	int		k;
-	t_uint8	a;
-
-	(void) bpr;
-	k = -1;
-	while (++k < width)
-	{
-		a = 0;
-		if (k)
-			a = dst[k - 1];
-		dst[k] = src[k] + a;
-	}
-}
-
-static void	defilter_up(t_uint8 *dst, t_uint8 *src, int width, int bpr)
-{
-	int	k;
-
-	k = -1;
-	while (++k < width)
-		dst[k] = src[k] + (dst - bpr)[k];
-}
-
-static void defilter_avg(t_uint8 *dst, t_uint8 *src, int width, int bpr)
-{
-	int	k;
-
-	k = -1;
-	while (++k < width)
-	{
-		t_uint8 a = 0;
-		t_uint8 b = (dst - bpr)[k];
-		if(k) {
-			a = dst[k - 1];
-		}
-		dst[k] = src[k] + ( (a + b) >> 1 );
-	}
-}
-
-static void	defilter_paeth(t_uint8 *dst, t_uint8 *src, int width, int bpr)
-{
-	int	k;
-
-	k = -1;
-	while (++k < width)
-	{
-		t_uint8 a = 0;
-		t_uint8 b = (dst - bpr)[k];
-		t_uint8 c = 0;
-		if(k) { 
-			a = dst[k - 1];
-			c = (dst - bpr)[k - 1];
-		}
-		dst[k] = src[k] + sh_png_paeth_predict(a, b, c);
-	}
-}
-
-void	defilter(t_png *png)
-{
-	t_uint8	*row;
-	t_uint8 byte_per_pixel = 1;
-	t_uint32 byte_per_row = png->width * byte_per_pixel;
-	t_uint8	*out;
-	t_uint32 out_len;
-	static void (*defilters[])(t_uint8*, t_uint8*, int, int) = {
-		defilter_none,
-		defilter_sub,
-		defilter_up,
-		defilter_avg,
-		defilter_paeth
-	};
-
-	row = png->data;
-	out_len = png->width * png->height * byte_per_pixel;
-	out = ft_calloc(out_len, sizeof(t_uint8));
-	for (int l = 0; l < png->height; l++)
-	{
-		t_uint8 *working = out + l * byte_per_row;
-		defilters[*row++](working, row, png->width, byte_per_row);
-		row += byte_per_row;
-	}
-	free(png->data);
-	png->data = out;
-	png->data_len = out_len;
 }
 
 int	main(int argc, char **argv)
