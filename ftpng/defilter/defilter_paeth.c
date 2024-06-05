@@ -6,9 +6,11 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/04 14:50:59 by scambier          #+#    #+#             */
-/*   Updated: 2024/06/04 14:55:43 by scambier         ###   ########.fr       */
+/*   Updated: 2024/06/04 15:03:12 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
+#include "libft.h"
 
 #include "structs.h"
 

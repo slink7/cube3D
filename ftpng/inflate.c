@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/10 04:50:42 by scambier          #+#    #+#             */
-/*   Updated: 2024/06/03 16:45:31 by scambier         ###   ########.fr       */
+/*   Updated: 2024/06/06 01:33:41 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -183,87 +183,46 @@ t_uint32 dist_extra_bits[] = {
 };
 
 
-
-
-t_uint32	decompress_zblock(t_uint8 **out, t_bit_stream *stream)
+void	hf_read_base_codes(t_huffcodes *out, t_bit_stream *stream, t_uint32 hclen)
 {
-	t_uint32 is_last;
-	t_uint32 type;
-	t_uint32 hlit; //Huffman literals (len)
-	t_uint32 hdist; //Huffman distances (len)
-	t_uint32 hclen; //Huffman codes len (len)
-
-	//Lecture du header du block
-	is_last = read_bits(stream, 1);
-	ft_printf("\nIs last: %x\n", is_last);
-	type = read_bits(stream, 2);
-	ft_printf("Block type: %x\n", type);
-	if (type == 0)
-		ft_printf("No compression\n");
-	else if (type == 1)
-		ft_printf("Fixed huffman code\n");
-	else if (type == 2)
-		ft_printf("Dynamic huffman code\n");
-	else if (type == 3)
-		ft_printf("Error\n");
-	if (type != 2)
-		return (0);
-	hlit = read_bits(stream, 5) + 257;
-	ft_printf("hlit: %d - 257\n", hlit);
-	hdist = read_bits(stream, 5) + 1;
-	ft_printf("hdist: %d - 1\n", hdist);
-	hclen = read_bits(stream, 4) + 4;
-	ft_printf("hclen: %d - 4\n", hclen);
-
-	//Lecture des longueur des codes
-	t_uint8 reorder_indexes[] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
-	t_uint8	*codes_length = ft_calloc(19, sizeof(t_uint8));
-	t_huffcodes	base_codes;
+	t_uint8			codes_length[19];
+	static t_uint8	reorder_indexes[] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
+	
+	ft_memset(codes_length, 0, 19);
 	for(t_uint8 i = 0; i < hclen; ++i)
 		codes_length[reorder_indexes[i]] = read_bits(stream, 3);
-	init_huffcodes(&base_codes, codes_length, 19);
-	free(codes_length);
+	init_huffcodes(out, codes_length, 19);
+}
 
-	//Assignation des codes
+t_uint8	*hf_get_both_codes(t_bit_stream *stream, t_huffcodes *base_codes, t_uint32 dst_len)
+{
+	t_uint8		*out;
+	t_uint32	code_index;
+	t_uint32	repeat_count;
+	t_uint32	decoded;
 
-
-
-	//Lecture des deux arbres (literal & repetitions)
-	t_uint8	*both_trees_codes = ft_calloc(hlit + hdist, sizeof(t_uint8));
-	t_uint32 code_index = 0;
-	while(code_index < (hdist+hlit))
+	out = ft_calloc(dst_len, sizeof(t_uint8));
+	code_index = 0;
+	while(code_index < dst_len)
 	{
-		t_uint32	decoded_value = decode_huffman(stream, &base_codes);
-		if (decoded_value < 16)
-		{
-			both_trees_codes[code_index++] = decoded_value;
-			continue ;
-		}
-		
-		t_uint32 repeat_count = 0;
-		t_uint8 repeat_value = 0;
-
-		if (decoded_value == 16)
-		{
+		decoded = decode_huffman(stream, base_codes);
+		repeat_count = 0;
+		if (decoded < 16)
+			out[code_index++] = decoded;
+		else if (decoded == 16)
 			repeat_count = read_bits(stream, 2) + 3;
-			repeat_value = both_trees_codes[code_index - 1];
-		}
-		else if (decoded_value = 17)
+		else if (decoded == 17)
 			repeat_count = read_bits(stream, 3) + 3;
-		else if (decoded_value = 18)
+		else if (decoded == 18)
 			repeat_count = read_bits(stream, 7) + 11;
-		ft_memset(both_trees_codes + code_index, repeat_value, repeat_count);
+		ft_memset(out + code_index, (decoded == 16) * out[code_index - 1], repeat_count);
 		code_index += repeat_count;
 	}
-	deinit_huffcodes(&base_codes);
+	return (out);
+}
 
-	t_huffcodes	huff_literals;
-	t_huffcodes	huff_distances;
-
-	init_huffcodes(&huff_literals, both_trees_codes, hlit);
-	init_huffcodes(&huff_distances, both_trees_codes + hlit, hdist);
-
-	//Decompression de la data, en utilisant des deux arbres pour LZ77
+t_uint32	lz_read(t_uint8 **out, t_bit_stream *stream, t_huffcodes *huff_lits, t_huffcodes *huff_dists)
+{
 	t_uint8		buffer[1024 * 1024];
 	t_uint32	index;
 	t_uint32	value;
@@ -271,8 +230,7 @@ t_uint32	decompress_zblock(t_uint8 **out, t_bit_stream *stream)
 	index = 0;
 	while (1)
 	{
-		value = decode_huffman(stream, &huff_literals);
-		// ft_printf("Decoded : %u\n", value);
+		value = decode_huffman(stream, huff_lits);
 		if (value == 256)
 			break ;
 		else if (value < 256)
@@ -282,7 +240,7 @@ t_uint32	decompress_zblock(t_uint8 **out, t_bit_stream *stream)
 			t_uint32	base_index = value - 257;
 			t_uint32	duplicate_length = base_lengths[base_index] + read_bits(stream, base_length_extra_bit[base_index]);;
 
-			t_uint32	distance_index = decode_huffman(stream, &huff_distances);
+			t_uint32	distance_index = decode_huffman(stream, huff_dists);
             t_uint32	distance_length = dist_bases[distance_index] + read_bits(stream, dist_extra_bits[distance_index]);
 			
 			t_uint32 back_pointer_index = index - distance_length;
@@ -290,23 +248,61 @@ t_uint32	decompress_zblock(t_uint8 **out, t_bit_stream *stream)
                 buffer[index++] = buffer[back_pointer_index++];
             }
 		}
-		else
-			ft_printf("Macarena >= 286\n");
 	}
-
-	//Copy
 	*out = ft_calloc(index, sizeof(t_uint8));
 	ft_memcpy(*out, buffer, index);
+	return (index);
+}
 
-	// ft_pmem(*out, index);
-	// ft_printf("Read %u bytes\n", index);
+t_uint32	decompress_dynamic(t_uint8 **out, t_bit_stream *stream)
+{
+	t_uint32 hlit; //Huffman literals (len)
+	t_uint32 hdist; //Huffman distances (len)
+	t_uint32 hclen; //Huffman codes len (len)
 
-	// ft_hexdump(out, index, 4);
-
-	//Cleanup
+	hlit = read_bits(stream, 5) + 257;
+	hdist = read_bits(stream, 5) + 1;
+	hclen = read_bits(stream, 4) + 4;
+	t_huffcodes base_codes;
+	hf_read_base_codes(&base_codes, stream, hclen);
+	t_uint8 *lit_dist = hf_get_both_codes(stream, &base_codes, hlit + hdist);
+	deinit_huffcodes(&base_codes);
+	t_huffcodes	huff_literals;
+	t_huffcodes	huff_distances;
+	init_huffcodes(&huff_literals, lit_dist, hlit);
+	init_huffcodes(&huff_distances, lit_dist + hlit, hdist);
+	free(lit_dist);
+	t_uint32 out_len = lz_read(out, stream, &huff_literals, &huff_distances);
 	deinit_huffcodes(&huff_literals);
 	deinit_huffcodes(&huff_distances);
-	return (index);
+	return (out_len);
+}
+
+t_uint32	decompress_zblock(t_uint8 **out, t_bit_stream *stream)
+{
+	t_uint32 is_last;
+	t_uint32 type;
+	
+
+	//Lecture du header du block
+	is_last = read_bits(stream, 1);
+	type = read_bits(stream, 2);
+	if (type == 0)
+		ft_printf("No compression\n");
+	else if (type == 1)
+		ft_printf("Fixed huffman code\n");
+	else if (type == 2)
+		ft_printf("Dynamic huffman code\n");
+	else if (type == 3)
+		ft_printf("Error\n");
+	if (type != 2)
+	{
+		ft_printf("Unsupported Compression method\n");
+		return (0);
+	}
+	if (type == 2)
+		return (decompress_dynamic(out, stream));
+	return (0);
 }
 
 t_uint32	inflate(t_uint8 **dst, t_uint8 *src, t_uint32 src_len)

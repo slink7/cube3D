@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/08 22:19:20 by scambier          #+#    #+#             */
-/*   Updated: 2024/06/03 16:45:46 by scambier         ###   ########.fr       */
+/*   Updated: 2024/06/04 15:06:48 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,8 +19,7 @@
 #include "ftpng.h"
 #include "structs.h"
 #include "parsing.h"
-
-
+#include "defilter.h"
 
 t_uint32	crc32(t_uint8 *bloc, t_uint32 size)
 {
@@ -96,7 +95,6 @@ int	load_png(t_png *dst, char *path)
 		free(file);
 		return (ft_fprintf(2, "Error: Invalid PNG header\n") & 0);
 	}
-	ft_pmem(file, file_length);
 	read_chunk(&ihdr_chunk, file + 8, file_length - 8);
 	if (ft_memcmp(ihdr_chunk.data, "IHDR", 4) != 0)
 	{
@@ -129,10 +127,10 @@ int	load_png(t_png *dst, char *path)
 		{
 			dst->data_len = inflate(&dst->data, chunk.data + 4, chunk.length);
 		}
-		//ft_pmem(chunk.data, chunk.length + 4);
 		file_index += chunk.length + 12;
 		read_chunk(&chunk, file + file_index, file_length - file_index);
 	}
 	free(file);
+	png_defilter(dst);
 	return (1);
 }

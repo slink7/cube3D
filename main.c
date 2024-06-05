@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:34:12 by scambier          #+#    #+#             */
-/*   Updated: 2024/06/04 14:41:40 by scambier         ###   ########.fr       */
+/*   Updated: 2024/06/04 15:30:42 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,6 @@ typedef struct	s_data {
 void	my_mlx_pixel_put(t_data *data, int x, int y, int color)
 {
 	char	*dst;
-	ft_printf("(%d, %d) : %X\n", x, y, color);
 	dst = data->addr + (y * data->line_length + x * (data->bits_per_pixel / 8));
 	*(unsigned int*)dst = color;
 }
@@ -70,12 +69,20 @@ t_uint32	byteto4bytes(t_uint8 *bytes)
 
 void	png_to_data(t_data *out, t_png *in)
 {
-	
 	for (int k = 0; k < in->data_len; k++)
 	{
 		my_mlx_pixel_put(out, k % in->width, k / in->width, byteto4bytes(in->data + k));
 	}
 }
+
+int	close_hook(void *mlx)
+{
+	mlx_loop_end(mlx);
+	return (0);
+}
+
+#include <X11/keysym.h>
+#include <X11/X.h>
 
 int	main(int argc, char **argv)
 {
@@ -88,18 +95,21 @@ int	main(int argc, char **argv)
 		return (ft_fprintf(2, "Missing arg\n") & 0);
 	t_png img;
 	load_png(&img, argv[1]);
-	defilter(&img);
-	// ft_pmem(img.data, img.data_len);
 
 	void *mlx = mlx_init();
 	void *win = mlx_new_window(mlx, img.width, img.height, "Cube3D de zinzin furieux moijdi");
-
 	t_data mlx_img;
 	mlx_img.img = mlx_new_image(mlx, img.width, img.height);
 	mlx_img.addr = mlx_get_data_addr(mlx_img.img, &mlx_img.bits_per_pixel, &mlx_img.line_length, &mlx_img.endian);
 	png_to_data(&mlx_img, &img);
 	mlx_put_image_to_window(mlx, win, mlx_img.img, 0, 0);
-	ft_pmem(img.data, img.data_len / 2);
+	mlx_hook(win, DestroyNotify, ButtonPressMask, close_hook, mlx);
 	mlx_loop(mlx);
+	mlx_destroy_image(mlx, mlx_img.img);
+	mlx_destroy_window(mlx, win);
+	mlx_destroy_display(mlx);
+	free(mlx);
+	
+	free(img.data);
 	return (0);
 }
