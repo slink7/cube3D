@@ -1,2 +1,6 @@
 all :
-	cc main.c parsing.c ftpng/*.c ftpng/defilter/*.c -g3 -Llibft/ -lft -Lmlx/ -lmlx -Ilibft -I./ -Imlx/ -Iftpng -lX11 -lXext -Iftpng/defilter/
+	cc main.c parsing.c -g3 -Llibft/ -lft -Lmlx/ -lmlx -Ilibft -I./ -Imlx/ -lX11 -lXext
+
+update :
+	git submodule update --init --remote
+	cd libft ; make
