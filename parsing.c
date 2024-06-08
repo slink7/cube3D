@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:43:09 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/10 18:21:48 by scambier         ###   ########.fr       */
+/*   Updated: 2024/06/08 17:15:07 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,27 @@ int	map_predicat(int c)
 	return (ft_strchr(" 01ENWS", c) != 0);
 }
 
+int	read_color(char *in)
+{
+	int	out;
+	char **temp;
+
+	if (*in == 'x')
+		return (ft_atoi_base(in + 1, "0123456789ABCDEF"));
+	out = 0;
+	temp = ft_split(in, ',');
+	if (ft_strarrlen(temp) == 3)
+	{
+		out = out << 8 | ft_atoi(temp[0]);
+		out = out << 8 | ft_atoi(temp[1]);
+		out = out << 8 | ft_atoi(temp[2]);
+	}
+	else
+		ft_fprintf(2, "Error: wrong color format \'%s\'\n", in);
+	ft_strarrfree(temp);
+	return (out);
+}
+
 void	parse_infos(char **lines, int *k, t_map *map)
 {
 	while (lines[++*k])
@@ -36,9 +57,9 @@ void	parse_infos(char **lines, int *k, t_map *map)
 		if (!ft_strchrf(lines[*k], map_predicat, 1))
 			return ;
 		if (lines[*k][0] == 'F')
-			map->floor_color = ft_atoi_base(lines[*k] + 2, "0123456789ABCDEF");
+			map->floor_color = read_color(lines[*k] + 2);
 		if (lines[*k][0] == 'C')
-			map->ceiling_color = ft_atoi_base(lines[*k] + 2, "0123456789ABCDEF");
+			map->ceiling_color = read_color(lines[*k] + 2);
 	}
 }
 
