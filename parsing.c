@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:43:09 by scambier          #+#    #+#             */
-/*   Updated: 2024/06/08 17:15:07 by scambier         ###   ########.fr       */
+/*   Updated: 2024/06/08 19:37:36 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include "libft.h"
 
 #include "structs.h"
+#include "mlx.h"
 
 int	space_predicat(int c)
 {
@@ -54,12 +55,20 @@ void	parse_infos(char **lines, int *k, t_map *map)
 	{
 		if (ft_strlen(lines[*k]) < 1 || !ft_strchrf(lines[*k], space_predicat, 1))
 			continue ;
-		if (!ft_strchrf(lines[*k], map_predicat, 1))
+		else if (!ft_strchrf(lines[*k], map_predicat, 1))
 			return ;
-		if (lines[*k][0] == 'F')
+		else if (lines[*k][0] == 'F')
 			map->floor_color = read_color(lines[*k] + 2);
-		if (lines[*k][0] == 'C')
+		else if (lines[*k][0] == 'C')
 			map->ceiling_color = read_color(lines[*k] + 2);
+		else if (!ft_strncmp(lines[*k], "EA ", 3))
+			map->wall_textures[0].path = ft_strdup(lines[*k] + 3);
+		else if (!ft_strncmp(lines[*k], "NO ", 3))
+			map->wall_textures[1].path = ft_strdup(lines[*k] + 3);
+		else if (!ft_strncmp(lines[*k], "WE ", 3))
+			map->wall_textures[2].path = ft_strdup(lines[*k] + 3);
+		else if (!ft_strncmp(lines[*k], "SO ", 3))
+			map->wall_textures[3].path = ft_strdup(lines[*k] + 3);
 	}
 }
 
@@ -97,7 +106,7 @@ void	parse_map(char **lines, int *k, t_map *map)
 		if (pred)
 			ft_printf("Error: '%c' is an invalid map char\n", *pred);
 		map->content[l] = ft_calloc(map->width + 1, sizeof(t_tile));
-		ft_memcpy(map->content[l++], lines[*k], map->width);
+		ft_strlcpy((char *)map->content[l++], lines[*k], map->width);
 	}
 }
 

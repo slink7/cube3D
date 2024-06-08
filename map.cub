@@ -1,7 +1,7 @@
-EA ./img/east.png
-NO ./img/north.png
-WE ./img/west.png
-SO ./img/south.png
+EA ./img/brick.xpm
+NO ./img/floor.xpm
+WE ./img/void.xpm
+SO ./img/water.xpm
 
 F xABCDEF
 C 225,30,0

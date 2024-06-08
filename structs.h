@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 12:31:34 by scambier          #+#    #+#             */
-/*   Updated: 2024/05/10 20:12:36 by scambier         ###   ########.fr       */
+/*   Updated: 2024/06/08 18:49:19 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,7 @@ typedef struct s_object {
 typedef unsigned short	t_tile;
 
 typedef struct s_image {
+	char	*path;
 	void	*content;
 	char	*addr;
 	int		bits_per_pixel;
@@ -62,10 +63,5 @@ typedef struct s_world {
 	t_map		map;
 	t_object	player;
 }	t_world;
-
-typedef unsigned char	t_uint8;
-typedef unsigned short	t_uint16;
-typedef unsigned int	t_uint32;
-typedef unsigned long	t_uint64;
 
 #endif
