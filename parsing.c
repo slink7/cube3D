@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:43:09 by scambier          #+#    #+#             */
-/*   Updated: 2024/06/08 19:37:36 by scambier         ###   ########.fr       */
+/*   Updated: 2024/06/08 22:15:25 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,9 +39,9 @@ int	read_color(char *in)
 	temp = ft_split(in, ',');
 	if (ft_strarrlen(temp) == 3)
 	{
-		out = out << 8 | ft_atoi(temp[0]);
-		out = out << 8 | ft_atoi(temp[1]);
-		out = out << 8 | ft_atoi(temp[2]);
+		out = out << 8 | (ft_atoi(temp[0]) & 0xFF);
+		out = out << 8 | (ft_atoi(temp[1]) & 0xFF);
+		out = out << 8 | (ft_atoi(temp[2]) & 0xFF);
 	}
 	else
 		ft_fprintf(2, "Error: wrong color format \'%s\'\n", in);
