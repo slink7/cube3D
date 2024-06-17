@@ -6,12 +6,13 @@
 /*   By: ymostows <ymostows@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:42:56 by ymostows          #+#    #+#             */
-/*   Updated: 2024/05/29 14:50:44 by ymostows         ###   ########.fr       */
+/*   Updated: 2024/06/17 13:24:33 by ymostows         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "structs.h"
 #include "incl.h"
+#include <time.h>
 #include <math.h>
 #include <mlx.h>
 
@@ -21,31 +22,63 @@
 #define MOUSE_SENS 0.005
 #define TEXTURE_SIZE 64
 
+typedef struct s_cf_rays
+{
+    double	ray_dir_x0;
+    double	ray_dir_y0;
+    double	ray_dir_x1;
+    double	ray_dir_y1;
+    double	row_distance;
+    double	floor_step_x;
+    double	floor_step_y;
+    double  inv_win;
+    double	floor_x;
+    double	floor_y;
+    int		cell_x;
+    int		cell_y;
+    int		tx;
+    int		ty;
+    int		color;
+    int     texture_size_mask;
+} t_cf_rays;
+
 typedef struct s_rays {
-    double	camera_x;
-    double	ray_dir_x;
-    double	ray_dir_y;
-    double	delta_dist_x;
-    double	delta_dist_y;
-	double	side_dist_x;
-	double	side_dist_y;
-    double  step;
-    double  tex_pos;
-    double  wall_x;
-    int		map_x;
-    int		map_y;
-    int		step_x;
-    int		step_y;
-	int		side;
-	int 	line_height;
-	int		draw_start;
-	int		draw_end;
-    int     tex_num;
-    int     tex_x;
-    int     tex_y;
+    double	    camera_x;
+    double	    ray_dir_x;
+    double	    ray_dir_y;
+    double	    delta_dist_x;
+    double	    delta_dist_y;
+	double	    side_dist_x;
+	double	    side_dist_y;
+    double      step;
+    double      tex_pos;
+    double      wall_x;
+    double      perp_wall_dist;
+    int		    map_x;
+    int		    map_y;
+    int		    step_x;
+    int		    step_y;
+	int		    side;
+	int 	    line_height;
+	int		    draw_start;
+	int		    draw_end;
+    int         tex_num;
+    int         tex_x;
+    int         tex_y;
+    t_cf_rays   cf_vars;
 } t_rays;
 
-#define NUM_TEXTURES 4
+#define NUM_TEXTURES 6
+#define NUM_ENEMIES 5
+
+typedef struct s_enemy {
+    double  x;
+    double  y;
+    int     texture;
+    double  distance;
+    double  transform_y;
+    int     visible;
+} t_enemy;
 
 typedef struct s_imgs {
     void    *img;
@@ -75,6 +108,8 @@ typedef struct s_data {
     t_imgs   img;
 	t_image	backbuffer;
     t_mouse *mouse;
+    t_enemy enemies[NUM_ENEMIES];
+    double z_buffer[WIN_WIDTH];
 } t_data;
 
 void rotate_view(t_data *data, double angle)
@@ -91,10 +126,12 @@ void rotate_view(t_data *data, double angle)
     data->plane_y = old_plane_x * sin(angle) + data->plane_y * cos(angle);
 }
 
-int mouse_move(int x, int y, t_data *data) {
+int mouse_move(int x, int y, t_data *data)
+{
     double  delta_x;
 
-    if (x < 0 || x >= WIN_WIDTH || y < 0 || y >= WIN_HEIGHT) {
+    if (x < 0 || x >= WIN_WIDTH || y < 0 || y >= WIN_HEIGHT)
+	{
         data->mouse->last_x = x;
         data->mouse->last_y = y;
         return 0;
@@ -128,10 +165,21 @@ void load_texture(t_data *data, int index, char *path)
 
 void init_textures(t_data *data)
 {
-    load_texture(data, NORTH, "textures/wall2.xpm");
-    load_texture(data, SOUTH, "textures/wall2.xpm");
-    load_texture(data, WEST, "textures/wall2.xpm");
-    load_texture(data, EAST, "textures/wall2.xpm");
+    load_texture(data, NORTH, "textures/grey_wall.xpm");
+    load_texture(data, SOUTH, "textures/grey_wall.xpm");
+    load_texture(data, WEST, "textures/grey_wall.xpm");
+    load_texture(data, EAST, "textures/grey_wall.xpm");
+    load_texture(data, 4, "textures/grey_floor.xpm");
+    load_texture(data, 5, "textures/Minotaurfront.xpm");
+}
+
+void init_enemies(t_data *data)
+{
+    data->enemies[0] = (t_enemy){6.5, 6.5, 5, 0, 0, 0};
+    data->enemies[1] = (t_enemy){10.5, 8.5, 5, 0, 0, 0};
+    data->enemies[2] = (t_enemy){15.5, 10.5, 5, 0, 0, 0};
+    data->enemies[3] = (t_enemy){20.5, 15.5, 5, 0, 0, 0};
+    data->enemies[4] = (t_enemy){12.5, 12.5, 5, 0, 0, 0};
 }
 
 
@@ -140,14 +188,14 @@ void    put_pixel(t_image *img, int x, int y, int color)
     int index;
     
     index = img->line_length * y + x * (img->bits_per_pixel / 8);
-    if (img->endian == 1)        // Most significant (Alpha) byte first
+    if (img->endian == 1)
     {
         img->data[index + 0] = (color >> 24);
         img->data[index + 1] = (color >> 16) & 0xFF;
         img->data[index + 2] = (color >> 8) & 0xFF;
         img->data[index + 3] = (color) & 0xFF;
     }
-    else if (img->endian == 0)   // Least significant (Blue) byte first
+    else if (img->endian == 0)
     {
         img->data[index + 0] = (color) & 0xFF;
         img->data[index + 1] = (color >> 8) & 0xFF;
@@ -218,25 +266,89 @@ int key_press(int keycode, t_data *data)
     return 0;
 }
 
-void    render_floor_ceiling(t_data *data)
+int adjust_color_brightness(int color, double factor) {
+    int red = ((color >> 16) & 0xFF) * factor;
+    int green = ((color >> 8) & 0xFF) * factor;
+    int blue = (color & 0xFF) * factor;
+    return (red << 16) | (green << 8) | blue;
+}
+
+void	init_cf_vars(t_data *data, t_cf_rays *cf_vars)
 {
-    int     x;
-    int     y;
+	cf_vars->ray_dir_x0 = data->dir_x - data->plane_x;
+    cf_vars->ray_dir_y0 = data->dir_y - data->plane_y;
+    cf_vars->ray_dir_x1 = data->dir_x + data->plane_x;
+    cf_vars->ray_dir_y1 = data->dir_y + data->plane_y;
+    cf_vars->inv_win = 1.0 / WIN_WIDTH;
+    cf_vars->texture_size_mask = TEXTURE_SIZE - 1;
+}
+void    render_ceiling(t_data *data, t_cf_rays *cf_vars)
+{
+    int x;
+    int y;
+    double distance_shade_factor;
     
     y = -1;
     while (++y < WIN_HEIGHT / 2)
-    {
-        x= -1;
+	{
+        cf_vars->row_distance = WIN_HEIGHT / (WIN_HEIGHT - 2.0 * y);
+        cf_vars->floor_step_x = cf_vars->row_distance * (cf_vars->ray_dir_x1 - cf_vars->ray_dir_x0) * cf_vars->inv_win;
+        cf_vars->floor_step_y = cf_vars->row_distance * (cf_vars->ray_dir_y1 - cf_vars->ray_dir_y0) * cf_vars->inv_win;
+        cf_vars->floor_x = data->pos_x + cf_vars->row_distance * cf_vars->ray_dir_x0;
+        cf_vars->floor_y = data->pos_y + cf_vars->row_distance * cf_vars->ray_dir_y0;
+		x = -1;
         while (++x < WIN_WIDTH)
-            put_pixel(&data->backbuffer, x, y, 0x009AED);
+		{
+            cf_vars->cell_x = (int)(cf_vars->floor_x);
+            cf_vars->cell_y = (int)(cf_vars->floor_y);
+            cf_vars->tx = (int)(TEXTURE_SIZE * (cf_vars->floor_x - cf_vars->cell_x)) & cf_vars->texture_size_mask;
+            cf_vars->ty = (int)(TEXTURE_SIZE * (cf_vars->floor_y - cf_vars->cell_y)) & cf_vars->texture_size_mask;
+            cf_vars->floor_x += cf_vars->floor_step_x;
+            cf_vars->floor_y += cf_vars->floor_step_y;
+            cf_vars->color = data->texture_buffer[4][TEXTURE_SIZE * cf_vars->ty + cf_vars->tx];
+            distance_shade_factor = 1.0 / (1.0 + cf_vars->row_distance * 0.5);
+            cf_vars->color = adjust_color_brightness(cf_vars->color, distance_shade_factor);
+            put_pixel(&data->backbuffer, x, y, cf_vars->color);
+        }
     }
-    y = WIN_HEIGHT / 2 -1;
+}
+
+void	render_floor(t_data *data, t_cf_rays *cf_vars)
+{
+	int	x;
+	int	y;
+    double distance_shade_factor;
+
+	y = WIN_HEIGHT / 2 - 1;
     while (++y < WIN_HEIGHT)
-    {
-        x = -1;
+	{
+        cf_vars->row_distance = WIN_HEIGHT / (2.0 * y - WIN_HEIGHT);
+        cf_vars->floor_step_x = cf_vars->row_distance * (cf_vars->ray_dir_x1 - cf_vars->ray_dir_x0) * cf_vars->inv_win;
+        cf_vars->floor_step_y = cf_vars->row_distance * (cf_vars->ray_dir_y1 - cf_vars->ray_dir_y0) * cf_vars->inv_win;
+        cf_vars->floor_x = data->pos_x + cf_vars->row_distance * cf_vars->ray_dir_x0;
+        cf_vars->floor_y = data->pos_y + cf_vars->row_distance * cf_vars->ray_dir_y0;
+		x = -1;
         while (++x < WIN_WIDTH)
-            put_pixel(&data->backbuffer, x, y, 0x2D610C);
+		{
+            cf_vars->cell_x = (int)(cf_vars->floor_x);
+            cf_vars->cell_y = (int)(cf_vars->floor_y);
+            cf_vars->tx = (int)(TEXTURE_SIZE * (cf_vars->floor_x - cf_vars->cell_x)) & cf_vars->texture_size_mask;
+            cf_vars->ty = (int)(TEXTURE_SIZE * (cf_vars->floor_y - cf_vars->cell_y)) & cf_vars->texture_size_mask;
+            cf_vars->floor_x += cf_vars->floor_step_x;
+            cf_vars->floor_y += cf_vars->floor_step_y;
+            cf_vars->color = data->texture_buffer[4][TEXTURE_SIZE * cf_vars->ty + cf_vars->tx];
+            distance_shade_factor = 1.0 / (1.0 + cf_vars->row_distance * 0.5);
+            cf_vars->color = adjust_color_brightness(cf_vars->color, distance_shade_factor);
+            put_pixel(&data->backbuffer, x, y, cf_vars->color);
+        }
     }
+}
+
+void render_cf(t_data *data, t_cf_rays *cf_vars)
+{
+    init_cf_vars(data, cf_vars);
+	render_floor(data, cf_vars);
+    render_ceiling(data, cf_vars);
 }
 
 void    calcul_delta_dist(t_data *data, t_rays *vars, int x)
@@ -300,13 +412,11 @@ void    calcul_wall_pos(t_data *data, t_rays *vars)
 
 void    calcul_wall_size(t_data *data, t_rays *vars)
 {   
-    double perp_wall_dist;
-    
     if (vars->side == 0)
-        perp_wall_dist = (vars->map_x - data->pos_x + (1 - vars->step_x) / 2) / vars->ray_dir_x;
+        vars->perp_wall_dist = (vars->map_x - data->pos_x + (1 - vars->step_x) / 2) / vars->ray_dir_x;
     else
-        perp_wall_dist = (vars->map_y - data->pos_y + (1 - vars->step_y) / 2) / vars->ray_dir_y;
-    vars->line_height = (int)(WIN_HEIGHT / perp_wall_dist);
+        vars->perp_wall_dist = (vars->map_y - data->pos_y + (1 - vars->step_y) / 2) / vars->ray_dir_y;
+    vars->line_height = (int)(WIN_HEIGHT / vars->perp_wall_dist);
     vars->draw_start = -vars->line_height / 2 + WIN_HEIGHT / 2;
     if (vars->draw_start < 0)
         vars->draw_start = 0;
@@ -314,27 +424,31 @@ void    calcul_wall_size(t_data *data, t_rays *vars)
     if (vars->draw_end >= WIN_HEIGHT)
         vars->draw_end = WIN_HEIGHT - 1;
     if (vars->side == 0)
-        vars->wall_x = data->pos_y + perp_wall_dist * vars->ray_dir_y;
+        vars->wall_x = data->pos_y + vars->perp_wall_dist * vars->ray_dir_y;
     else
-        vars->wall_x = data->pos_x + perp_wall_dist * vars->ray_dir_x;
+        vars->wall_x = data->pos_x + vars->perp_wall_dist * vars->ray_dir_x;
 }
 
-
-void select_texture(t_rays *rays)
+void select_texture(t_rays *rays, int cell_value)
 {
-    if (rays->side == 0)
-    {
-        if (rays->ray_dir_x > 0)
-            rays->tex_num = EAST;
-        else
-            rays->tex_num = WEST;
-    }
+    if (cell_value == 3)
+        rays->tex_num = 5;
     else
-    {
-        if (rays->ray_dir_y > 0)
-            rays->tex_num = SOUTH;
+	{
+        if (rays->side == 0)
+        {
+            if (rays->ray_dir_x > 0)
+                rays->tex_num = EAST;
+            else
+                rays->tex_num = WEST;
+        }
         else
-            rays->tex_num = NORTH;
+        {
+            if (rays->ray_dir_y > 0)
+                rays->tex_num = SOUTH;
+            else
+                rays->tex_num = NORTH;
+        }
     }
 }
 
@@ -348,29 +462,174 @@ void    handle_textures(t_rays *vars)
     vars->tex_pos = (vars->draw_start - WIN_HEIGHT / 2 + vars->line_height / 2) * vars->step;
 }
 
-void    draw_walls(t_data *data, t_rays *vars, int x)
-{
+void draw_walls(t_data *data, t_rays *vars, int x) {
     int y;
     int tex_y;
     int color;
-    
+    double distance_shade_factor;
+
     y = vars->draw_start - 1;
     while (++y < vars->draw_end)
-    {
+	{
         tex_y = (int)vars->tex_pos & (TEXTURE_SIZE - 1);
         vars->tex_pos += vars->step;
         color = data->texture_buffer[vars->tex_num][TEXTURE_SIZE * tex_y + vars->tex_x];
-        if (vars->side == 1)
+        distance_shade_factor = 1.0 / (1.0 + vars->perp_wall_dist * 0.5);
+        color = adjust_color_brightness(color, distance_shade_factor);
+        if (vars->side == 1 && color != -16777216)
             color = (color >> 1) & 0x7F7F7F;
         put_pixel(&data->backbuffer, x, y, color);
     }
+    data->z_buffer[x] = vars->perp_wall_dist;
+}
+
+// Les deux prochaines fonctions ont été faite par chatgpt donc c'est dégeulasse (mais ça marche xD)
+
+int has_line_of_sight(t_data *data, double enemy_x, double enemy_y) {
+    double ray_dir_x = enemy_x - data->pos_x;
+    double ray_dir_y = enemy_y - data->pos_y;
+    double delta_dist_x = fabs(1 / ray_dir_x);
+    double delta_dist_y = fabs(1 / ray_dir_y);
+
+    int map_x = (int)data->pos_x;
+    int map_y = (int)data->pos_y;
+
+    double side_dist_x;
+    double side_dist_y;
+
+    int step_x;
+    int step_y;
+    int hit = 0;
+
+    if (ray_dir_x < 0)
+    {
+        step_x = -1;
+        side_dist_x = (data->pos_x - map_x) * delta_dist_x;
+    }
+    else
+    {
+        step_x = 1;
+        side_dist_x = (map_x + 1.0 - data->pos_x) * delta_dist_x;
+    }
+
+    if (ray_dir_y < 0)
+    {
+        step_y = -1;
+        side_dist_y = (data->pos_y - map_y) * delta_dist_y;
+    }
+    else
+    {
+        step_y = 1;
+        side_dist_y = (map_y + 1.0 - data->pos_y) * delta_dist_y;
+    }
+
+    while (!hit)
+    {
+        if (side_dist_x < side_dist_y)
+        {
+            side_dist_x += delta_dist_x;
+            map_x += step_x;
+        }
+        else
+        {
+            side_dist_y += delta_dist_y;
+            map_y += step_y;
+        }
+        // Vérifiez si le rayon a frappé un mur
+        if (data->world_map[map_x][map_y] == 1)
+            return 0; // Ligne de vue bloquée
+        // Vérifiez si le rayon a atteint l'ennemi
+        if (map_x == (int)enemy_x && map_y == (int)enemy_y)
+            return 1; // Ligne de vue dégagée
+    }
+    return 0; // Ligne de vue bloquée (au cas où)
+}
+
+void draw_enemies(t_data *data) {
+    for (int i = 0; i < NUM_ENEMIES; i++) {
+        t_enemy *enemy = &data->enemies[i];
+        double sprite_x = enemy->x - data->pos_x;
+        double sprite_y = enemy->y - data->pos_y;
+
+        if (!has_line_of_sight(data, enemy->x, enemy->y))
+			continue ;
+        double inv_det = 1.0 / (data->plane_x * data->dir_y - data->dir_x * data->plane_y);
+        double transform_x = inv_det * (data->dir_y * sprite_x - data->dir_x * sprite_y);
+        double transform_y = inv_det * (-data->plane_y * sprite_x + data->plane_x * sprite_y);
+
+        enemy->transform_y = transform_y;
+        int sprite_screen_x = (int)((WIN_WIDTH / 2) * (1 + transform_x / transform_y));
+
+        int sprite_height = abs((int)(WIN_HEIGHT / transform_y));
+        int draw_start_y = -sprite_height / 2 + WIN_HEIGHT / 2;
+        if (draw_start_y < 0) draw_start_y = 0;
+        int draw_end_y = sprite_height / 2 + WIN_HEIGHT / 2;
+        if (draw_end_y >= WIN_HEIGHT) draw_end_y = WIN_HEIGHT - 1;
+
+        int sprite_width = abs((int)(WIN_HEIGHT / transform_y));
+        int draw_start_x = -sprite_width / 2 + sprite_screen_x;
+        if (draw_start_x < 0) draw_start_x = 0;
+        int draw_end_x = sprite_width / 2 + sprite_screen_x;
+        if (draw_end_x >= WIN_WIDTH) draw_end_x = WIN_WIDTH - 1;
+
+        // Calcul du facteur d'ombrage basé sur la distance de l'ennemi
+        double distance_shade_factor = 1.0 / (1.0 + enemy->transform_y * 0.5);
+
+        // Dessiner l'ennemi
+        for (int stripe = draw_start_x; stripe < draw_end_x; stripe++) {
+            int tex_x = (int)((256 * (stripe - (-sprite_width / 2 + sprite_screen_x)) * TEXTURE_SIZE / sprite_width) / 256);
+            if (transform_y > 0 && stripe > 0 && stripe < WIN_WIDTH && transform_y < data->z_buffer[stripe]) {
+                for (int y = draw_start_y; y < draw_end_y; y++) {
+                    int d = y * 256 - WIN_HEIGHT * 128 + sprite_height * 128;
+                    int tex_y = ((d * TEXTURE_SIZE) / sprite_height) / 256;
+                    int color = data->texture_buffer[enemy->texture][TEXTURE_SIZE * tex_y + tex_x];
+                    // Appliquer l'effet d'ombrage
+                    color = adjust_color_brightness(color, distance_shade_factor);
+                    if ((color & 0x00FFFFFF) != 0) { // Vérifier que le pixel n'est pas transparent
+                        put_pixel(&data->backbuffer, stripe, y, color);
+                    }
+                }
+            }
+        }
+    }
+}
+
+double enemies_dir_x(t_data *data, int i)
+{
+    if (data->enemies[i].x - data->pos_x > 0)
+        return (-0.1);
+    else if (data->enemies[i].x - data->pos_x < 0)
+        return (0.1);
+    return (0.0);
+}
+
+double enemies_dir_y(t_data *data, int i)
+{
+    if (data->enemies[i].y - data->pos_y > 0)
+        return (-0.1);
+    else if (data->enemies[i].y - data->pos_y < 0)
+        return (0.1);
+    return (0.0);
+}
+
+int    enemies_mouvs(t_data *data)
+{
+    int i;
+
+    i = -1;
+    while (++i < NUM_ENEMIES)
+    {
+        data->enemies[i].x += enemies_dir_x(data, i);
+        data->enemies[i].y += enemies_dir_y(data, i);
+    }
+    return (0);
 }
 
 int render_frame(t_data *data) {
     t_rays  vars;
     int     x;
     
-    render_floor_ceiling(data);
+    render_cf(data, &vars.cf_vars);
     x = -1;
     while (++x < WIN_WIDTH)
     {
@@ -378,14 +637,35 @@ int render_frame(t_data *data) {
         calcul_side_dist(data, &vars);
         calcul_wall_pos(data, &vars);
         calcul_wall_size(data, &vars);
-        select_texture(&vars);
+        select_texture(&vars, data->world_map[vars.map_x][vars.map_y]);
         handle_textures(&vars);
         draw_walls(data, &vars, x);
     }
+    //update_enemy_visibility(data);
+    draw_enemies(data);
 	mlx_put_image_to_window(data->mlx_ptr, data->win_ptr, data->backbuffer.addr, 0, 0);
     return 0;
 }
 
+
+// Pour le moment ça sert pas à grand chose j'ai rajouter ça pour le déplacement des ennemies pas utile mais ça pourra servir pour plus tard
+int combined_hook(t_data *data)
+{
+    static clock_t last_enemy_update = 0;
+    clock_t current_time = clock();
+
+    // Render frame
+    render_frame(data);
+
+    // Update enemies every 100ms
+    if ((current_time - last_enemy_update) * 1000 / CLOCKS_PER_SEC >= 100)
+    {
+        enemies_mouvs(data);
+        last_enemy_update = current_time;
+    }
+
+    return 0;
+}
 
 int main() 
 {
@@ -432,10 +712,12 @@ int main()
     data.plane_y = 0.66;
 
     init_textures(&data);
+    init_enemies(&data);
 	init_imgs(&data, &data.backbuffer, WIN_WIDTH, WIN_HEIGHT);
     mlx_hook(data.win_ptr, 2, 1L << 0, key_press, &data);
     mlx_hook(data.win_ptr, 6, 1L << 6, mouse_move, &data);
-    mlx_loop_hook(data.mlx_ptr, &render_frame, &data);
+    //mlx_loop_hook(data.mlx_ptr, &enemies_mouvs, &data);
+    mlx_loop_hook(data.mlx_ptr, combined_hook, &data);
     /*mlx_mouse_move(data.mlx_ptr, data.win_ptr, WIN_WIDTH / 2, WIN_HEIGHT / 2);
     mlx_mouse_hide(data.mlx_ptr, data.win_ptr);*/
     mlx_loop(data.mlx_ptr);
