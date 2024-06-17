@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:43:09 by scambier          #+#    #+#             */
-/*   Updated: 2024/06/08 22:15:25 by scambier         ###   ########.fr       */
+/*   Updated: 2024/06/12 18:48:08 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,10 +33,12 @@ int	read_color(char *in)
 	int	out;
 	char **temp;
 
-	if (*in == 'x')
-		return (ft_atoi_base(in + 1, "0123456789ABCDEF"));
+	if (!ft_strncmp(in, "0x", 2))
+		return (ft_atoi_base(in + 2, "0123456789ABCDEF"));
 	out = 0;
 	temp = ft_split(in, ',');
+	if (!temp)
+		return (0);
 	if (ft_strarrlen(temp) == 3)
 	{
 		out = out << 8 | (ft_atoi(temp[0]) & 0xFF);
@@ -49,14 +51,14 @@ int	read_color(char *in)
 	return (out);
 }
 
-void	parse_infos(char **lines, int *k, t_map *map)
+int	parse_infos(char **lines, int *k, t_map *map)
 {
 	while (lines[++*k])
 	{
 		if (ft_strlen(lines[*k]) < 1 || !ft_strchrf(lines[*k], space_predicat, 1))
 			continue ;
 		else if (!ft_strchrf(lines[*k], map_predicat, 1))
-			return ;
+			return (1);
 		else if (lines[*k][0] == 'F')
 			map->floor_color = read_color(lines[*k] + 2);
 		else if (lines[*k][0] == 'C')
@@ -70,6 +72,8 @@ void	parse_infos(char **lines, int *k, t_map *map)
 		else if (!ft_strncmp(lines[*k], "SO ", 3))
 			map->wall_textures[3].path = ft_strdup(lines[*k] + 3);
 	}
+	ft_fprintf(2, "Error: Missing map layout");
+	return (0);
 }
 
 int	get_longest(char **lines)
@@ -89,25 +93,29 @@ int	get_longest(char **lines)
 	return (max);
 }
 
-void	parse_map(char **lines, int *k, t_map *map)
+int	parse_map(char **lines, int *k, t_map *map)
 {
 	char	*pred;
 	int		l;
+	int		line_len;
 
 	map->height = ft_strarrlen(lines + *k);
-	map->content = ft_calloc(map->height, sizeof(char *));
+	map->content = ft_calloc(map->height + 1, sizeof(char *));
 	if (!map->content)
-		return ;
+		return (0);
 	map->width = get_longest(lines + *k);
-	l = 0;
-	while (lines[++*k])
+	l = -1;
+	while (lines[*k + ++l])
 	{
-		pred = ft_strchrf(lines[*k], map_predicat, 1);
+		pred = ft_strchrf(lines[*k + l], map_predicat, 1);
 		if (pred)
-			ft_printf("Error: '%c' is an invalid map char\n", *pred);
+			return (ft_printf("Error: invalid map char: '%c'\n", *pred) & 0);
 		map->content[l] = ft_calloc(map->width + 1, sizeof(t_tile));
-		ft_strlcpy((char *)map->content[l++], lines[*k], map->width);
+		line_len = ft_strlen(lines[*k + l]);
+		ft_memcpy(map->content[l], lines[*k + l], line_len);
+		ft_memset(map->content[l] + line_len, ' ', map->width - line_len);
 	}
+	return (1);
 }
 
 int	load_map(char *path, t_map *map)
@@ -122,9 +130,10 @@ int	load_map(char *path, t_map *map)
 	free(temp);
 	mode = 0;
 	k = -1;
-	parse_infos(lines, &k, map);
-	k -= 1;
-	parse_map(lines, &k, map);
+	if (!parse_infos(lines, &k, map))
+		return (ft_strarrfree(lines) & 0);
+	if (!parse_map(lines, &k, map))
+		return (ft_strarrfree(lines) & 0);
 	ft_strarrfree(lines);
 	return (1);
 }

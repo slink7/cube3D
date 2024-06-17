@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 12:31:34 by scambier          #+#    #+#             */
-/*   Updated: 2024/06/08 18:49:19 by scambier         ###   ########.fr       */
+/*   Updated: 2024/06/11 18:15:23 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@ typedef struct s_object {
 	float	rotation;
 }	t_object;
 
-typedef unsigned short	t_tile;
+typedef unsigned char	t_tile;
 
 typedef struct s_image {
 	char	*path;

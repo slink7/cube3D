@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:34:12 by scambier          #+#    #+#             */
-/*   Updated: 2024/06/08 19:39:49 by scambier         ###   ########.fr       */
+/*   Updated: 2024/06/12 19:20:55 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,32 +52,71 @@ int	close_hook(void *mlx)
 	return (0);
 }
 
+int	check_tile(t_map *map, int k, int l)
+{
+	if (k == map->width - 1 || l == map->height - 1)
+		return (map->content[l][k] != '0');
+	if ((k == 0 || l == 0) && map->content[l][k] == '0')
+		return (0);
+	if (ft_abs(map->content[l][k] - map->content[l][k + 1]) == '0' - ' ')
+		return (0);
+	if (ft_abs(map->content[l][k] - map->content[l + 1][k]) == '0' - ' ')
+		return (0);
+	return (1);
+}
+
+int	check_walls(t_map *map)
+{
+	int	k;
+	int	l;
+
+	l = -1;
+	while (++l < map->height - 1)
+	{
+		k = -1;
+		while (++k < map->width)
+			if (!check_tile(map, k, l))
+				return (ft_fprintf(2, "Error: Invalid map at (%d;%d)\n", k, l) & 0);
+	}
+	return (1);
+}
+
+
 #include <X11/keysym.h>
 #include <X11/X.h>
+
+
 
 int	main(int argc, char **argv)
 {
 	t_map	map;
 
+	if (argc < 2)
+		return (0);
 	ft_memset(&map, 0, sizeof(t_map));
-	load_map("map.cub", &map);
-	print_map(&map);
+	if(load_map(argv[1], &map))
+	{
+		print_map(&map);
+		if (!check_walls(&map))
+			return (0);
+	}
+		
 	
-	void *mlx = mlx_init();
-	void *win = mlx_new_window(mlx, 256, 256, "Cube3D de zinzin furieux moijdi");
-	load_texture(mlx, map.wall_textures + 0);
-	load_texture(mlx, map.wall_textures + 1);
-	load_texture(mlx, map.wall_textures + 2);
-	load_texture(mlx, map.wall_textures + 3);
+	// void *mlx = mlx_init();
+	// void *win = mlx_new_window(mlx, 256, 256, "Cube3D de zinzin furieux moijdi");
+	// load_texture(mlx, map.wall_textures + 0);
+	// load_texture(mlx, map.wall_textures + 1);
+	// load_texture(mlx, map.wall_textures + 2);
+	// load_texture(mlx, map.wall_textures + 3);
 
-	for(int k = 0; k < 4; k++)
-		mlx_put_image_to_window(mlx, win, map.wall_textures[k].content, k * map.wall_textures[k].width, 0);
-	mlx_hook(win, DestroyNotify, ButtonPressMask, close_hook, mlx);
-	mlx_loop(mlx);
-	//mlx_destroy_image(mlx, mlx_img.img);
-	mlx_destroy_window(mlx, win);
-	mlx_destroy_display(mlx);
-	free(mlx);
+	// for(int k = 0; k < 4; k++)
+	// 	mlx_put_image_to_window(mlx, win, map.wall_textures[k].content, k * map.wall_textures[k].width, 0);
+	// mlx_hook(win, DestroyNotify, ButtonPressMask, close_hook, mlx);
+	// mlx_loop(mlx);
+	// //mlx_destroy_image(mlx, mlx_img.img);
+	// mlx_destroy_window(mlx, win);
+	// mlx_destroy_display(mlx);
+	// free(mlx);
 
 	return (0);
 }
