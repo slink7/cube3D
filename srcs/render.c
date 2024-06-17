@@ -6,11 +6,7 @@
 /*   By: ymostows <ymostows@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:42:56 by ymostows          #+#    #+#             */
-<<<<<<< HEAD
-/*   Updated: 2024/06/17 13:24:33 by ymostows         ###   ########.fr       */
-=======
-/*   Updated: 2024/05/30 16:28:27 by ymostows         ###   ########.fr       */
->>>>>>> refs/remotes/origin/testrender
+/*   Updated: 2024/06/17 15:38:57 by ymostows         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -142,7 +138,9 @@ int mouse_move(int x, int y, t_data *data)
     }
     delta_x = x - data->mouse->last_x;
     rotate_view(data, -delta_x * MOUSE_SENS);
-    mlx_mouse_move(data->mlx_ptr, data->win_ptr, WIN_WIDTH / 2, WIN_HEIGHT / 2);
+    data->mouse->last_x = x;
+    data->mouse->last_y = y;
+    //mlx_mouse_move(data->mlx_ptr, data->win_ptr, WIN_WIDTH / 2, WIN_HEIGHT / 2);
     return 0;
 }
 
@@ -257,11 +255,11 @@ void strafe_left(t_data *data)
 }
 int key_press(int keycode, t_data *data)
 {
-    if (keycode == 'w')
+    if (keycode == 'z')
         move_forward(data);
     if (keycode == 's')
         move_backward(data);
-    if (keycode == 'a')
+    if (keycode == 'q')
         strafe_left(data);
     if (keycode == 'd')
         strafe_right(data);
@@ -391,7 +389,7 @@ void    calcul_side_dist(t_data *data, t_rays *vars)
         }
 }
 
-void    calcul_wall_pos(t_data *data, t_rays *vars)
+void    calcul_wall_pos(t_data *data, t_rays *vars) //DDA
 {   
     while (1)
     {
@@ -718,15 +716,10 @@ int main()
 	init_imgs(&data, &data.backbuffer, WIN_WIDTH, WIN_HEIGHT);
     mlx_hook(data.win_ptr, 2, 1L << 0, key_press, &data);
     mlx_hook(data.win_ptr, 6, 1L << 6, mouse_move, &data);
-<<<<<<< HEAD
     //mlx_loop_hook(data.mlx_ptr, &enemies_mouvs, &data);
     mlx_loop_hook(data.mlx_ptr, combined_hook, &data);
     /*mlx_mouse_move(data.mlx_ptr, data.win_ptr, WIN_WIDTH / 2, WIN_HEIGHT / 2);
     mlx_mouse_hide(data.mlx_ptr, data.win_ptr);*/
-=======
-    mlx_loop_hook(data.mlx_ptr, &render_frame, &data);
-    mlx_mouse_hide(data.mlx_ptr, data.win_ptr);
->>>>>>> refs/remotes/origin/testrender
     mlx_loop(data.mlx_ptr);
     return 0;
 }
