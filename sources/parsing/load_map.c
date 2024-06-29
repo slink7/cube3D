@@ -1,57 +1,23 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   parsing.c                                          :+:      :+:    :+:   */
+/*   load_map.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/05/03 14:43:09 by scambier          #+#    #+#             */
-/*   Updated: 2024/06/12 18:48:08 by scambier         ###   ########.fr       */
+/*   Created: 2024/06/29 19:36:44 by scambier          #+#    #+#             */
+/*   Updated: 2024/06/29 20:03:40 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <fcntl.h>
 #include <stdlib.h>
 
 #include "libft.h"
 
 #include "structs.h"
-#include "mlx.h"
+#include "parsing_utils.h"
 
-int	space_predicat(int c)
-{
-	return (c == ' ' || c == '\t');
-}
-
-int	map_predicat(int c)
-{
-	return (ft_strchr(" 01ENWS", c) != 0);
-}
-
-int	read_color(char *in)
-{
-	int	out;
-	char **temp;
-
-	if (!ft_strncmp(in, "0x", 2))
-		return (ft_atoi_base(in + 2, "0123456789ABCDEF"));
-	out = 0;
-	temp = ft_split(in, ',');
-	if (!temp)
-		return (0);
-	if (ft_strarrlen(temp) == 3)
-	{
-		out = out << 8 | (ft_atoi(temp[0]) & 0xFF);
-		out = out << 8 | (ft_atoi(temp[1]) & 0xFF);
-		out = out << 8 | (ft_atoi(temp[2]) & 0xFF);
-	}
-	else
-		ft_fprintf(2, "Error: wrong color format \'%s\'\n", in);
-	ft_strarrfree(temp);
-	return (out);
-}
-
-int	parse_infos(char **lines, int *k, t_map *map)
+static int	parse_infos(char **lines, int *k, t_map *map)
 {
 	while (lines[++*k])
 	{
@@ -76,24 +42,9 @@ int	parse_infos(char **lines, int *k, t_map *map)
 	return (0);
 }
 
-int	get_longest(char **lines)
-{
-	int	k;
-	int	max;
-	int	temp;
 
-	max = -0x80000000;
-	k = -1;
-	while (lines[++k])
-	{
-		temp = ft_strlen(lines[k]);
-		if (temp > max)
-			max = temp;
-	}
-	return (max);
-}
 
-int	parse_map(char **lines, int *k, t_map *map)
+static int	parse_map(char **lines, int *k, t_map *map)
 {
 	char	*pred;
 	int		l;
@@ -122,13 +73,11 @@ int	load_map(char *path, t_map *map)
 {
 	char	**lines;
 	int		k;
-	int		mode;
 	char	*temp;
 
 	ft_get_file(&temp, path, 128);
 	lines = ft_split(temp, '\n');
 	free(temp);
-	mode = 0;
 	k = -1;
 	if (!parse_infos(lines, &k, map))
 		return (ft_strarrfree(lines) & 0);

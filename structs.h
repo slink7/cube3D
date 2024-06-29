@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 12:31:34 by scambier          #+#    #+#             */
-/*   Updated: 2024/06/11 18:15:23 by scambier         ###   ########.fr       */
+/*   Updated: 2024/06/29 19:55:53 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,11 +47,13 @@ typedef struct s_image {
 
 typedef unsigned int	t_color;
 
+#define TEXTURE_COUNT 4
+
 typedef struct s_map {
 	t_tile	**content;
 	int		width;
 	int		height;
-	t_image	wall_textures[4];
+	t_image	wall_textures[TEXTURE_COUNT];
 	t_color	floor_color;
 	t_color	ceiling_color;
 }	t_map;
