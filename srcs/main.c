@@ -66,5 +66,13 @@ int	main(int argc, char **argv)
 	/*mlx_mouse_move(data.mlx_ptr, data.win_ptr, WIN_WIDTH / 2, WIN_HEIGHT / 2);
 	mlx_mouse_hide(data.mlx_ptr, data.win_ptr);*/
 	mlx_loop(data.mlx_ptr);
+
+	free(data.map.wall_textures[0].path);
+	free(data.map.wall_textures[1].path);
+	free(data.map.wall_textures[2].path);
+	free(data.map.wall_textures[3].path);
+	for (int k = 0; k < data.map.height; k++)
+		free(data.map.content[k]);
+	free(data.map.content);
 	return (0);
 }

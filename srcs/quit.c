@@ -16,6 +16,14 @@
 
 int	free_all(t_data *data)
 {
+	free(data->map.wall_textures[0].path);
+	free(data->map.wall_textures[1].path);
+	free(data->map.wall_textures[2].path);
+	free(data->map.wall_textures[3].path);
+	for (int k = 0; k < data->map.height; k++)
+		free(data->map.content[k]);
+	free(data->map.content);
+	ft_fprintf(1, "SALUT\n");
 	mlx_destroy_window(data->mlx_ptr, data->win_ptr);
 	mlx_destroy_image(data->mlx_ptr, data->backbuffer.addr);
 	mlx_destroy_display(data->mlx_ptr);
