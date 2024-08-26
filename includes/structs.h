@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 12:31:34 by scambier          #+#    #+#             */
-/*   Updated: 2024/08/26 22:06:45 by scambier         ###   ########.fr       */
+/*   Updated: 2024/08/26 23:10:41 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 
 # define WIN_WIDTH 1920
 # define WIN_HEIGHT 1080
-# define MOVE_SPEED 0.2
+# define MOVE_SPEED 0.1
 # define MOUSE_SENS 0.005
 # define TEXTURE_SIZE 64
 # define PI 3.14159265358979323846
@@ -104,6 +104,11 @@ typedef struct s_map {
 	t_color	ceiling_color;
 }	t_map;
 
+# define IN_Z 0b0001
+# define IN_Q 0b0010
+# define IN_S 0b0100
+# define IN_D 0b1000
+
 typedef struct s_data {
     void    *mlx_ptr;
     void    *win_ptr;
@@ -115,6 +120,7 @@ typedef struct s_data {
     double  dir_y;
     double  plane_x;
     double  plane_y;
+	int 	inputs;
     t_image   texture[NUM_TEXTURES];
     int     *texture_buffer[NUM_TEXTURES];
     t_image   img;

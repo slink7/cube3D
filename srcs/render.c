@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   render.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ymostows <ymostows@student.42.fr>          +#+  +:+       +#+        */
+/*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:42:56 by ymostows          #+#    #+#             */
-/*   Updated: 2024/08/26 19:23:44 by ymostows         ###   ########.fr       */
+/*   Updated: 2024/08/26 23:05:14 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,11 +35,24 @@ void	render_floor_ceiling(t_data *data)
 	}
 }
 
+void	handle_movement(t_data *data)
+{
+	if (data->inputs & IN_Z)
+		move_forward(data);
+	if (data->inputs & IN_Q)
+		strafe_left(data);
+	if (data->inputs & IN_S)
+		move_backward(data);
+	if (data->inputs & IN_D)
+		strafe_right(data);
+}
+
 int	render_frame(t_data *data)
 {
 	t_rays	vars;
 	int		x;
 
+	handle_movement(data);
 	render_floor_ceiling(data);
 	x = -1;
 	while (++x < WIN_WIDTH)

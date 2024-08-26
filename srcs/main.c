@@ -51,14 +51,15 @@ int	main(int argc, char **argv)
 
 	if (argc < 2)
 		return (0);
-	ft_memset(&data.map, 0, sizeof(t_map));
+	ft_memset(&data, 0, sizeof(t_data));
 	if (load_map(argv[1], &data.map))
 	{
 		if (!check_walls(&data.map))
 			ft_printf("Invalid walls\n");
 	}
 	init_game(&data, &mouse);
-	mlx_hook(data.win_ptr, 2, 1L << 0, key_press, &data);
+	mlx_hook(data.win_ptr, 2, 1L << 0, on_keydown, &data);
+	mlx_hook(data.win_ptr, 3, 1L << 1, on_keyup, &data);
 	mlx_hook(data.win_ptr, 6, 1L << 6, mouse_move, &data);
 	mlx_hook(data.win_ptr, DestroyNotify, \
 		ButtonPressMask, close_game, &data);
@@ -67,12 +68,6 @@ int	main(int argc, char **argv)
 	mlx_mouse_hide(data.mlx_ptr, data.win_ptr);*/
 	mlx_loop(data.mlx_ptr);
 
-	free(data.map.wall_textures[0].path);
-	free(data.map.wall_textures[1].path);
-	free(data.map.wall_textures[2].path);
-	free(data.map.wall_textures[3].path);
-	for (int k = 0; k < data.map.height; k++)
-		free(data.map.content[k]);
-	free(data.map.content);
+	
 	return (0);
 }
