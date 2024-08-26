@@ -1,67 +1,70 @@
-#===CONFIGURATION===
-NAME = cub3d
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#    Makefile                                           :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#    By: ymostows <ymostows@student.42.fr>          +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#    Created: 2024/05/03 14:57:20 by ymostows          #+#    #+#              #
+#    Updated: 2024/08/26 19:13:43 by ymostows         ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
 
-SRC =\
-	sources/parsing/load_map.c\
-	sources/parsing/parsing_utils.c\
-	sources/textures/load_map_textures.c\
-	sources/verification/check_walls.c\
-	main.c
+NAME		=	cube3d
 
-CFLAGS = -Wall -Werror -Wextra -g3
-LFLAGS = -lX11 -lXext
+CC			=	cc
 
-LIBS = \
-	libft/libft.a\
-	mlx/libmlx.a
+FLAG		=	-Wall -Werror -Wextra -g3
 
+LIBFT_PATH	=	./libft/
 
-INCLUDES = -Ilibft/ -Imlx/ -I./ -Isources/*/
+LIBFT_FILE	=	libft.a
 
-OBJ_DIR = obj
+MLX_FILE	=	libmlx.a
 
-#===AUTOMATIC VARS===
+LIBFT_LIB	=	$(addprefix $(LIBFT_PATH), $(LIBFT_FILE))
 
-OBJ = $(addprefix $(OBJ_DIR)/, $(addsuffix .o, $(basename $(SRC))))
-OBJ_BONUS = $(addprefix $(OBJ_DIR)/, $(addsuffix _bonus.o, $(notdir $(basename $(SRC_BONUS)))))
+MLX_FLAG	=	-lX11 -lXext -lm
 
-LIB_FLAGS = $(addprefix -L, $(dir $(LIBS))) $(addprefix -l, $(patsubst lib%.a, %, $(notdir $(LIBS))))
+MLX_PATH	=	./minilibx-linux/
 
-#===TARGETS===
-all : $(NAME)
+MLX_LIB		=	$(addprefix $(MLX_PATH), $(MLX_FILE))
 
-bonus : $(NAME_BONUS)
+MLX_EX		=	$(MLX_LIB) $(MLX_FLAG)
 
-#===COMPILING===
-$(OBJ_DIR) :
-	$(shell mkdir -p $(OBJ_DIR))
-$(OBJ_DIR)/%.o : %.c
-	mkdir -p $(dir $@)
-	cc $(CFLAGS) -o $@ -c $< $(INCLUDES)
-$(OBJ_DIR)/%_bonus.o : bonus/%.c
-	mkdir -p $(dir $@)
-	cc $(CFLAGS) -o $@ -c $< $(INCLUDES)
-%.a :
-	make -C $(dir $@)
+SRCS		=	render.c mouvements.c mouse_mouvs.c images_utils.c manage_textures.c raycasting.c render_walls.c quit.c load_map.c parsing_utils.c check_walls.c init_player.c main.c 
 
-#===LINKING===
-$(NAME_BONUS) : $(OBJ_DIR) $(LIBS) $(OBJ_BONUS)
-	cc -o $(NAME_BONUS) $(OBJ_BONUS) $(LIB_FLAGS) $(LFLAGS)
-$(NAME) : $(OBJ_DIR) $(LIBS) $(OBJ)
-	cc -o $(NAME) $(OBJ) $(LIB_FLAGS) $(LFLAGS)
+SRC_DIR		=	./srcs/
 
-#===CLEAN===
-clean :
-	rm -rf $(OBJ_DIR) || true
+INC_DIR		=	./includes/
 
-#===FCLEAN===
-fclean : clean
-	rm -f $(NAME) $(NAME_BONUS) || true
+SRC			=	$(addprefix $(SRC_DIR),$(SRCS))
 
-#===RE===
-re : fclean all
+OBJ			=	$(SRC:.c=.o)
 
-valgrind : all
-	valgrind --leak-check=full --show-leak-kinds=all --suppressions=valgrind.cfg ./minishell
+.c.o:
+	$(CC) $(FLAG) -c $< -o $@ -I$(INC_DIR) -Ilibft/ -Iminilibx-linux/
 
-.PHONY : re fclean clean all default bonus
+all: $(NAME)
+
+lib:
+	make -C $(LIBFT_PATH)
+
+mlx:
+	make -sC $(MLX_PATH)
+
+$(NAME): lib mlx $(OBJ)
+	$(CC) $(OBJ) $(LIBFT_LIB) $(MLX_EX) -o $(NAME)
+
+clean:
+	make clean -sC $(MLX_PATH)
+	make clean -sC $(LIBFT_PATH)
+	rm -f $(OBJ)
+
+fclean: clean
+	rm -f $(NAME)
+	make fclean -C $(LIBFT_PATH)
+
+re: fclean all
+
+.PHONY: all clean fclean re
