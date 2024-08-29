@@ -13,19 +13,11 @@
 #include "structs.h"
 #include "funct.h"
 #include "incl.h"
+#include "parsing.h"
 
 int	free_all(t_data *data)
 {
-	int	k;
-
-	free(data->map.wall_textures[0].path);
-	free(data->map.wall_textures[1].path);
-	free(data->map.wall_textures[2].path);
-	free(data->map.wall_textures[3].path);
-	k = -1;
-	while (++k < data->map.height)
-		free(data->map.content[k]);
-	free(data->map.content);
+	unload_map(&data->map);
 	mlx_destroy_window(data->mlx_ptr, data->win_ptr);
 	mlx_destroy_image(data->mlx_ptr, data->backbuffer.addr);
 	mlx_destroy_display(data->mlx_ptr);

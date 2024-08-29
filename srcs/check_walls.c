@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   check_walls.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ymostows <ymostows@student.42.fr>          +#+  +:+       +#+        */
+/*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/29 19:45:42 by scambier          #+#    #+#             */
-/*   Updated: 2024/08/26 19:25:43 by ymostows         ###   ########.fr       */
+/*   Updated: 2024/08/29 14:58:23 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,12 +16,16 @@
 static int	check_tile(t_map *map, int k, int l)
 {
 	if (k == map->width - 1 || l == map->height - 1)
-		return (map->content[l][k] != '0');
-	if ((k == 0 || l == 0) && map->content[l][k] == '0')
+		return (!!ft_strchr(" 1", map->content[l][k]));
+	if (k == 0 || l == 0)
+		return (!!ft_strchr(" 1", map->content[l][k]));
+	if (map->content[l][k] == ' ' && !ft_strchr(" 1", map->content[l][k + 1]))
 		return (0);
-	if (ft_abs(map->content[l][k] - map->content[l][k + 1]) == '0' - ' ')
+	if (map->content[l][k] == ' ' && !ft_strchr(" 1", map->content[l + 1][k]))
 		return (0);
-	if (ft_abs(map->content[l][k] - map->content[l + 1][k]) == '0' - ' ')
+	if (map->content[l][k + 1] == ' ' && !ft_strchr(" 1", map->content[l][k]))
+		return (0);
+	if (map->content[l + 1][k] == ' ' && !ft_strchr(" 1", map->content[l][k]))
 		return (0);
 	return (1);
 }

@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/29 19:36:44 by scambier          #+#    #+#             */
-/*   Updated: 2024/08/29 14:12:21 by scambier         ###   ########.fr       */
+/*   Updated: 2024/08/29 15:03:30 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,5 +86,20 @@ int	load_map(char *path, t_map *map)
 	if (!parse_map(lines, &k, map))
 		return (ft_strarrfree(lines) & 0);
 	ft_strarrfree(lines);
+	return (1);
+}
+
+int	unload_map(t_map *map)
+{
+	int	k;
+
+	free(map->wall_textures[0].path);
+	free(map->wall_textures[1].path);
+	free(map->wall_textures[2].path);
+	free(map->wall_textures[3].path);
+	k = -1;
+	while (++k < map->height)
+		free(map->content[k]);
+	free(map->content);
 	return (1);
 }
