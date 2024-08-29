@@ -50,7 +50,7 @@ void	init_direction_east_west(t_data *data, t_tile dir)
 	}
 }
 
-void	init_player(t_data *data)
+int	init_player(t_data *data)
 {
 	int	i;
 	int	j;
@@ -68,8 +68,9 @@ void	init_player(t_data *data)
 				data->pos_x = j;
 				data->pos_y = i;
 				data->map.content[j][i] = '0';
-				return ;
+				return (1);
 			}
 		}
 	}
+	return (0);
 }

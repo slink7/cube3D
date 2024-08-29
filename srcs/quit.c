@@ -27,7 +27,7 @@ int	free_all(t_data *data)
 
 int	close_game(t_data *data)
 {
-	destroy_textures(data);
+	destroy_textures(data, 4);
 	free_all(data);
 	exit (EXIT_FAILURE);
 }

@@ -14,7 +14,7 @@
 #include "funct.h"
 #include "incl.h"
 
-void	load_texture(t_data *data, int index, char *path)
+int	load_texture(t_data *data, int index, char *path)
 {
 	t_image	img;
 	int		x;
@@ -24,7 +24,7 @@ void	load_texture(t_data *data, int index, char *path)
 
 	img.addr = mlx_xpm_file_to_image(data->mlx_ptr, path, &x, &y);
 	if (!img.addr || x != TEXTURE_SIZE || y != TEXTURE_SIZE)
-		return ;
+		return (0);
 	img.data = (int *)mlx_get_data_addr(img.addr,
 			&img.bits_per_pixel, &img.line_length, &img.endian);
 	data->texture_buffer[index] = malloc(sizeof(int)
@@ -38,26 +38,33 @@ void	load_texture(t_data *data, int index, char *path)
 				* TEXTURE_SIZE + j] = img.data[i * TEXTURE_SIZE + j];
 	}
 	mlx_destroy_image(data->mlx_ptr, img.addr);
+	return (1);
 }
 
-void	destroy_textures(t_data *data)
+int	destroy_textures(t_data *data, int n)
 {
 	int	i;
 
 	i = 0;
-	while (i < 4)
+	while (i < n)
 	{
 		free(data->texture_buffer[i]);
 		i++;
 	}
+	return (1);
 }
 
-void	init_textures(t_data *data)
+int	init_textures(t_data *data)
 {
-	load_texture(data, NORTH, data->map.wall_textures[NORTH].path);
-	load_texture(data, SOUTH, data->map.wall_textures[SOUTH].path);
-	load_texture(data, WEST, data->map.wall_textures[WEST].path);
-	load_texture(data, EAST, data->map.wall_textures[EAST].path);
+	if (!load_texture(data, NORTH, data->map.wall_textures[NORTH].path))
+		return (0);
+	if (!load_texture(data, SOUTH, data->map.wall_textures[SOUTH].path))
+		return (0 & destroy_textures(data, 1));
+	if (!load_texture(data, WEST, data->map.wall_textures[WEST].path))
+		return (0 & destroy_textures(data, 2));
+	if (!load_texture(data, EAST, data->map.wall_textures[EAST].path))
+		return (0 & destroy_textures(data, 3));
+	return (1);
 }
 
 void	select_texture(t_rays *rays)
