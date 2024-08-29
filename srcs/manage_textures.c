@@ -65,16 +65,16 @@ void	select_texture(t_rays *rays)
 	if (rays->side == 0)
 	{
 		if (rays->ray_dir_x > 0)
-			rays->tex_num = WEST;
+			rays->tex_num = SOUTH;
 		else
-			rays->tex_num = EAST;
+			rays->tex_num = NORTH;
 	}
 	else
 	{
 		if (rays->ray_dir_y > 0)
-			rays->tex_num = SOUTH;
+			rays->tex_num = EAST;
 		else
-			rays->tex_num = NORTH;
+			rays->tex_num = WEST;
 	}
 }
 

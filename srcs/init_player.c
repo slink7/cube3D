@@ -14,16 +14,16 @@
 #include "incl.h"
 #include "funct.h"
 
-void	init_direction_east_west(t_data *data, t_tile dir)
+void	init_direction_noth_south(t_data *data, t_tile dir)
 {
-	if (dir == 'E')
+	if (dir == 'N')
 	{
-		data->dir_x = 1.0;
+		data->dir_x = -1.0;
 		data->dir_y = 0.0;
 		data->plane_x = 0.0;
-		data->plane_y = -0.66;
+		data->plane_y = 0.66;
 	}
-	else if (dir == 'W')
+	else if (dir == 'S')
 	{
 		data->dir_x = 1.0;
 		data->dir_y = 0.0;
@@ -32,16 +32,16 @@ void	init_direction_east_west(t_data *data, t_tile dir)
 	}
 }
 
-void	init_direction_noth_south(t_data *data, t_tile dir)
+void	init_direction_east_west(t_data *data, t_tile dir)
 {
-	if (dir == 'N')
+	if (dir == 'W')
 	{
 		data->dir_x = 0.0;
 		data->dir_y = -1.0;
 		data->plane_x = -0.66;
 		data->plane_y = 0.0;
 	}
-	else if (dir == 'S')
+	else if (dir == 'E')
 	{
 		data->dir_x = 0.0;
 		data->dir_y = 1.0;
