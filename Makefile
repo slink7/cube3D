@@ -6,7 +6,7 @@
 #    By: scambier <scambier@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/05/03 14:57:20 by ymostows          #+#    #+#              #
-#    Updated: 2024/08/26 22:15:20 by scambier         ###   ########.fr        #
+#    Updated: 2024/08/29 16:12:13 by scambier         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -47,13 +47,13 @@ OBJ			=	$(SRC:.c=.o)
 
 all: $(NAME)
 
-lib:
+libft/libft.a:
 	make -C $(LIBFT_PATH)
 
-mlx:
+minilibx-linux/libmlx.a:
 	make -sC $(MLX_PATH)
 
-$(NAME): lib mlx $(OBJ)
+$(NAME): libft/libft.a minilibx-linux/libmlx.a $(OBJ)
 	$(CC) $(OBJ) $(LIBFT_LIB) $(MLX_EX) -o $(NAME)
 
 clean:
