@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:42:56 by ymostows          #+#    #+#             */
-/*   Updated: 2024/08/29 13:49:50 by scambier         ###   ########.fr       */
+/*   Updated: 2024/08/29 14:35:53 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,9 +45,6 @@ void	handle_movement(t_data *data)
 		move_backward(data);
 	if (data->inputs & IN_D)
 		strafe_right(data);
-	// if (data->inputs & IN_ESC)
-	// 	mlx_mouse_move(data->mlx_ptr, data->win_ptr,
-	// 		WIN_WIDTH / 2, WIN_HEIGHT / 2);	
 }
 
 int	render_frame(t_data *data)

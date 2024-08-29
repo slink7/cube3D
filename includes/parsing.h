@@ -6,14 +6,14 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 14:42:19 by scambier          #+#    #+#             */
-/*   Updated: 2024/06/29 19:58:05 by scambier         ###   ########.fr       */
+/*   Updated: 2024/08/29 14:36:16 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef PARSING_H
 # define PARSING_H
 
-#include "structs.h"
+# include "structs.h"
 
 int		load_map(char *path, t_map *map);
 int		check_walls(t_map *map);

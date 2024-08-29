@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 12:31:34 by scambier          #+#    #+#             */
-/*   Updated: 2024/08/29 13:45:00 by scambier         ###   ########.fr       */
+/*   Updated: 2024/08/29 14:44:11 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@
 # define MAP_WALL	1
 # define MAP_FLOOR	2
 
-#define NUM_TEXTURES 4
+# define NUM_TEXTURES 4
 
 # define NORTH	0
 # define SOUTH	1
@@ -67,33 +67,33 @@ typedef struct s_image {
 }				t_image;
 
 typedef struct s_rays {
-    double	camera_x;
-    double	ray_dir_x;
-    double	ray_dir_y;
-    double	delta_dist_x;
-    double	delta_dist_y;
+	double	camera_x;
+	double	ray_dir_x;
+	double	ray_dir_y;
+	double	delta_dist_x;
+	double	delta_dist_y;
 	double	side_dist_x;
 	double	side_dist_y;
-    double  step;
-    double  tex_pos;
-    double  wall_x;
-    int		map_x;
-    int		map_y;
-    int		step_x;
-    int		step_y;
+	double	step;
+	double	tex_pos;
+	double	wall_x;
+	int		map_x;
+	int		map_y;
+	int		step_x;
+	int		step_y;
 	int		side;
-	int 	line_height;
+	int		line_height;
 	int		draw_start;
 	int		draw_end;
-    int     tex_num;
-    int     tex_x;
-    int     tex_y;
-} t_rays;
+	int		tex_num;
+	int		tex_x;
+	int		tex_y;
+}	t_rays;
 
 typedef struct s_mouse {
-    int last_x;
-    int last_y;
-} t_mouse;
+	int	last_x;
+	int	last_y;
+}	t_mouse;
 
 typedef struct s_map {
 	t_tile	**content;
@@ -111,25 +111,25 @@ typedef struct s_map {
 # define IN_ESC	0b10000
 
 typedef struct s_data {
-    void    *mlx_ptr;
-    void    *win_ptr;
+	void	*mlx_ptr;
+	void	*win_ptr;
 	int		world_map[24][24];
-    t_map	map;
-    double  pos_x;
-    double  pos_y;
-    double  dir_x;
-    double  dir_y;
-    double  plane_x;
-    double  plane_y;
-	int 	inputs;
-    t_image   texture[NUM_TEXTURES];
-    int     *texture_buffer[NUM_TEXTURES];
-    t_image   img;
+	t_map	map;
+	double	pos_x;
+	double	pos_y;
+	double	dir_x;
+	double	dir_y;
+	double	plane_x;
+	double	plane_y;
+	int		inputs;
+	t_image	texture[NUM_TEXTURES];
+	int		*texture_buffer[NUM_TEXTURES];
+	t_image	img;
 	t_image	backbuffer;
-    t_mouse *mouse;
-} t_data;
+	t_mouse	*mouse;
+}	t_data;
 
-#define TEXTURE_COUNT 4
+# define TEXTURE_COUNT 4
 
 /*t_tile	map_get_at(t_map *map, int x, int y);
 void	map_set_at(t_map *map, int x, int y, t_tile v);*/
