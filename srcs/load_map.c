@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   load_map.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ymostows <ymostows@student.42.fr>          +#+  +:+       +#+        */
+/*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/29 19:36:44 by scambier          #+#    #+#             */
-/*   Updated: 2024/08/26 19:24:34 by ymostows         ###   ########.fr       */
+/*   Updated: 2024/08/29 14:12:21 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,7 +74,10 @@ int	load_map(char *path, t_map *map)
 	int		k;
 	char	*temp;
 
+	temp = 0;
 	ft_get_file(&temp, path, 128);
+	if (!temp)
+		return (0);
 	lines = ft_split(temp, '\n');
 	free(temp);
 	k = -1;

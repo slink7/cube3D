@@ -37,7 +37,10 @@ int	mouse_move(int x, int y, t_data *data)
 		data->mouse->last_y = y;
 		return (0);
 	}
-	delta_x = x - WIN_WIDTH / 2;
+	if (data->inputs & IN_ESC)
+		delta_x = x - WIN_WIDTH / 2;
+	else
+		delta_x = x - data->mouse->last_x;
 	rotate_view(data, -delta_x * MOUSE_SENS);
 	data->mouse->last_x = x;
 	data->mouse->last_y = y;

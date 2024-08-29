@@ -16,11 +16,14 @@
 
 int	free_all(t_data *data)
 {
+	int	k;
+
 	free(data->map.wall_textures[0].path);
 	free(data->map.wall_textures[1].path);
 	free(data->map.wall_textures[2].path);
 	free(data->map.wall_textures[3].path);
-	for (int k = 0; k < data->map.height; k++)
+	k = -1;
+	while (++k < data->map.height)
 		free(data->map.content[k]);
 	free(data->map.content);
 	mlx_destroy_window(data->mlx_ptr, data->win_ptr);
@@ -37,14 +40,15 @@ int	close_game(t_data *data)
 	exit (EXIT_FAILURE);
 }
 
-int on_keyup(int keycode, t_data *data)
+// if (data->inputs & IN_ESC)
+// 	mlx_mouse_show(data->mlx_ptr, data->win_ptr);
+// else
+// 	mlx_mouse_hide(data->mlx_ptr, data->win_ptr);
+
+int	on_keyup(int keycode, t_data *data)
 {
 	if (keycode == XK_Escape)
 	{
-		if (data->inputs & IN_ESC)
-			mlx_mouse_show(data->mlx_ptr, data->win_ptr);
-		else
-			mlx_mouse_hide(data->mlx_ptr, data->win_ptr);
 		data->inputs ^= IN_ESC;
 	}
 	else if (keycode == 'w')

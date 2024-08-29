@@ -55,8 +55,13 @@ int	main(int argc, char **argv)
 	if (load_map(argv[1], &data.map))
 	{
 		if (!check_walls(&data.map))
+		{
 			ft_printf("Invalid walls\n");
+			return (0);
+		}
 	}
+	else
+		return (0);
 	init_game(&data, &mouse);
 	mlx_hook(data.win_ptr, 2, 1L << 0, on_keydown, &data);
 	mlx_hook(data.win_ptr, 3, 1L << 1, on_keyup, &data);
