@@ -44,7 +44,7 @@ int	main(int argc, char **argv)
 	if (load_map(argv[1], &data.map) && !check_walls(&data.map))
 		return (0 & unload_map(&data.map) & ft_printf("Invalid walls\n"));
 	if (!init_player(&data))
-		return (0 & unload_map(&data.map) & ft_fprintf(2, "Player spawn not found.\n"));
+		return (0 & unload_map(&data.map));
 	if (!init_game(&data, &mouse))
 		return (0 & free_all(&data));
 	mlx_hook(data.win_ptr, 2, 1L << 0, on_keydown, &data);

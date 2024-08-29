@@ -72,5 +72,5 @@ int	init_player(t_data *data)
 			}
 		}
 	}
-	return (0);
+	return (0 & ft_fprintf(2, "Player spawn not found.\n"));
 }
