@@ -22,6 +22,8 @@ int	load_texture(t_data *data, int index, char *path)
 	int		i;
 	int		j;
 
+	if (!path)
+		return (0);
 	img.addr = mlx_xpm_file_to_image(data->mlx_ptr, path, &x, &y);
 	if (!img.addr || x != TEXTURE_SIZE || y != TEXTURE_SIZE)
 		return (0);
