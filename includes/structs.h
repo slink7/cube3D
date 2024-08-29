@@ -6,7 +6,7 @@
 /*   By: scambier <scambier@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/03 12:31:34 by scambier          #+#    #+#             */
-/*   Updated: 2024/08/26 23:10:41 by scambier         ###   ########.fr       */
+/*   Updated: 2024/08/29 13:45:00 by scambier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -104,10 +104,11 @@ typedef struct s_map {
 	t_color	ceiling_color;
 }	t_map;
 
-# define IN_Z 0b0001
-# define IN_Q 0b0010
-# define IN_S 0b0100
-# define IN_D 0b1000
+# define IN_Z	0b00001
+# define IN_Q	0b00010
+# define IN_S	0b00100
+# define IN_D	0b01000
+# define IN_ESC	0b10000
 
 typedef struct s_data {
     void    *mlx_ptr;

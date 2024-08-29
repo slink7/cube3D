@@ -37,10 +37,12 @@ int	mouse_move(int x, int y, t_data *data)
 		data->mouse->last_y = y;
 		return (0);
 	}
-	delta_x = x - data->mouse->last_x;
+	delta_x = x - WIN_WIDTH / 2;
 	rotate_view(data, -delta_x * MOUSE_SENS);
 	data->mouse->last_x = x;
 	data->mouse->last_y = y;
-	//mlx_mouse_move(data->mlx_ptr, data->win_ptr, WIN_WIDTH / 2, WIN_HEIGHT / 2);
+	if (data->inputs & IN_ESC)
+		mlx_mouse_move(data->mlx_ptr, data->win_ptr,
+			WIN_WIDTH / 2, WIN_HEIGHT / 2);
 	return (0);
 }

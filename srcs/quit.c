@@ -39,9 +39,17 @@ int	close_game(t_data *data)
 
 int on_keyup(int keycode, t_data *data)
 {
-	if (keycode == 'z')
+	if (keycode == XK_Escape)
+	{
+		if (data->inputs & IN_ESC)
+			mlx_mouse_show(data->mlx_ptr, data->win_ptr);
+		else
+			mlx_mouse_hide(data->mlx_ptr, data->win_ptr);
+		data->inputs ^= IN_ESC;
+	}
+	else if (keycode == 'w')
 		data->inputs ^= data->inputs & IN_Z;
-	else if (keycode == 'q')
+	else if (keycode == 'a')
 		data->inputs ^= data->inputs & IN_Q;
 	else if (keycode == 's')
 		data->inputs ^= data->inputs & IN_S;
@@ -52,15 +60,15 @@ int on_keyup(int keycode, t_data *data)
 
 int	on_keydown(int keycode, t_data *data)
 {
-	if (keycode == 'z')
+	if (keycode == 'w')
 		data->inputs |= IN_Z;
-	else if (keycode == 'q')
+	else if (keycode == 'a')
 		data->inputs |= IN_Q;
 	else if (keycode == 's')
 		data->inputs |= IN_S;
 	else if (keycode == 'd')
 		data->inputs |= IN_D;
-	else if (keycode == 'a')
+	else if (keycode == 'q')
 		close_game(data);
 	return (0);
 }

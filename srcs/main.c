@@ -64,8 +64,6 @@ int	main(int argc, char **argv)
 	mlx_hook(data.win_ptr, DestroyNotify, \
 		ButtonPressMask, close_game, &data);
 	mlx_loop_hook(data.mlx_ptr, &render_frame, &data);
-	mlx_mouse_move(data.mlx_ptr, data.win_ptr, WIN_WIDTH / 2, WIN_HEIGHT / 2);
-	mlx_mouse_hide(data.mlx_ptr, data.win_ptr);
 	mlx_loop(data.mlx_ptr);
 	return (0);
 }
